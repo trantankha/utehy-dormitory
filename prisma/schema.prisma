@@ -1,0 +1,200 @@
+// Prisma Schema cho Hệ thống Đăng ký Ký túc xá UTEHY
+// Database: PostgreSQL
+// ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & USER MANAGEMENT
+// ============================================
+
+enum UserRole {
+  STUDENT // Sinh viên
+  ADMIN   // Quản lý ký túc xá
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed password
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student Student? // One-to-one với Student nếu role = STUDENT
+
+  @@map("users")
+}
+
+// ============================================
+// STUDENT INFORMATION
+// ============================================
+
+model Student {
+  id          String   @id @default(cuid())
+  userId      String   @unique // Foreign key to User
+  studentCode String   @unique // Mã sinh viên (VD: 2024001)
+  fullName    String   // Họ và tên
+  gender      String   // Giới tính: "Nam" hoặc "Nữ"
+  dateOfBirth DateTime // Ngày sinh
+  phoneNumber String   // Số điện thoại
+  email       String   @unique // Email sinh viên
+  major       String   // Ngành học
+  course      String   // Khóa học (VD: K18, K19)
+  address     String   @db.Text // Địa chỉ thường trú
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registrations Registration[] // Một sinh viên có thể có nhiều phiếu đăng ký
+
+  @@map("students")
+}
+
+// ============================================
+// DORMITORY MANAGEMENT
+// ============================================
+
+enum DormitoryGender {
+  NAM // Ký túc xá nam
+  NU  // Ký túc xá nữ
+}
+
+model Dormitory {
+  id          String          @id @default(cuid())
+  name        String          @unique // Tên ký túc xá (VD: "Nhà A", "Nhà B")
+  code        String          @unique // Mã ký túc xá (VD: "KTX-A")
+  gender      DormitoryGender // Giới tính: NAM hoặc NU
+  address     String          @db.Text // Địa chỉ
+  description String?         @db.Text // Mô tả
+  totalRooms  Int             @default(0) // Tổng số phòng
+  isActive    Boolean         @default(true) // Trạng thái hoạt động
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  rooms Room[] // Một ký túc xá có nhiều phòng
+
+  @@map("dormitories")
+}
+
+// ============================================
+// ROOM MANAGEMENT
+// ============================================
+
+enum RoomType {
+  PHONG_4  // Phòng 4 người
+  PHONG_6  // Phòng 6 người
+  PHONG_8  // Phòng 8 người
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  dormitoryId String   // Foreign key to Dormitory
+  roomNumber  String   // Số phòng (VD: "101", "202")
+  floor       Int      // Tầng
+  roomType    RoomType // Loại phòng
+  capacity    Int      // Sức chứa tối đa (số giường)
+  occupied    Int      @default(0) // Số giường đã được đặt
+  pricePerSemester Decimal @db.Decimal(10, 2) // Giá thuê/học kỳ (VNĐ)
+  description String?  @db.Text // Mô tả phòng
+  isActive    Boolean  @default(true) // Trạng thái hoạt động
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  dormitory     Dormitory      @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
+  beds          Bed[] // Một phòng có nhiều giường
+  registrations Registration[] // Một phòng có nhiều phiếu đăng ký
+
+  @@unique([dormitoryId, roomNumber]) // Số phòng phải unique trong một ký túc xá
+  @@map("rooms")
+}
+
+// ============================================
+// BED MANAGEMENT
+// ============================================
+
+enum BedStatus {
+  AVAILABLE // Giường trống
+  OCCUPIED  // Đã có người
+  RESERVED  // Đã đặt trước
+  MAINTENANCE // Đang bảo trì
+}
+
+model Bed {
+  id          String    @id @default(cuid())
+  roomId      String    // Foreign key to Room
+  bedNumber   String    // Số giường (VD: "1", "2", "A", "B")
+  status      BedStatus @default(AVAILABLE)
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  room          Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  registrations Registration[] // Một giường có thể có nhiều phiếu đăng ký (theo thời gian)
+
+  @@unique([roomId, bedNumber]) // Số giường phải unique trong một phòng
+  @@map("beds")
+}
+
+// ============================================
+// REGISTRATION MANAGEMENT
+// ============================================
+
+enum RegistrationStatus {
+  CHO_XAC_NHAN // Chờ xác nhận
+  DA_XAC_NHAN  // Đã xác nhận
+  DA_THANH_TOAN // Đã thanh toán
+  DA_HUY       // Đã hủy
+  TU_CHOI      // Từ chối
+}
+
+enum Semester {
+  HK1_2024_2025 // Học kỳ 1 năm học 2024-2025
+  HK2_2024_2025 // Học kỳ 2 năm học 2024-2025
+  HK1_2025_2026
+  HK2_2025_2026
+}
+
+model Registration {
+  id              String             @id @default(cuid())
+  studentId       String             // Foreign key to Student
+  roomId          String             // Foreign key to Room
+  bedId           String?            // Foreign key to Bed (optional, có thể chưa chọn giường cụ thể)
+  semester        Semester           // Học kỳ đăng ký
+  status          RegistrationStatus @default(CHO_XAC_NHAN)
+  registeredAt    DateTime           @default(now()) // Thời gian đăng ký
+  confirmedAt     DateTime?          // Thời gian xác nhận
+  paidAt          DateTime?          // Thời gian thanh toán
+  cancelledAt     DateTime?          // Thời gian hủy
+  notes           String?            @db.Text // Ghi chú
+  adminNotes      String?            @db.Text // Ghi chú của admin
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  room    Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  bed     Bed?    @relation(fields: [bedId], references: [id], onDelete: SetNull)
+
+  @@map("registrations")
+}
+
+// ============================================
+// INDEXES FOR PERFORMANCE
+// ============================================
+
+// Index cho tìm kiếm nhanh
+// Prisma tự động tạo index cho @unique và @id
+// Thêm index cho các trường thường xuyên query
