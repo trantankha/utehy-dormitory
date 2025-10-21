@@ -1,5 +1,5 @@
-// Prisma Client Singleton Pattern
-// Đảm bảo chỉ có một instance của Prisma Client trong suốt vòng đời ứng dụng
+// lib/prisma.ts
+// Prisma Client Singleton Pattern cho Node.js runtime
 
 import { PrismaClient } from "@prisma/client"
 

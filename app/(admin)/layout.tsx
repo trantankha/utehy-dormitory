@@ -5,8 +5,9 @@ import { redirect } from "next/navigation"
 import { AdminNav } from "@/components/layouts/admin-nav"
 
 export const metadata: Metadata = {
-  title: "Quản trị - UTEHY Dormitory",
+  title: "Trang quản trị | UTEHY - Hệ thống quản lý ký túc xá",
   description: "Trang quản trị hệ thống",
+  icons: { icon: "/logo-utehy.ico" },
 }
 
 export default async function AdminLayout({

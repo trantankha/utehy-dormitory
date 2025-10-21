@@ -13,7 +13,7 @@ import { requireAuth } from "@/lib/auth"
 export async function getAvailableRoomsAction(filters?: {
   dormitoryId?: string
   gender?: "NAM" | "NU"
-  roomType?: string
+  roomType?: "PHONG_4" | "PHONG_6" | "PHONG_8"
 }) {
   try {
     await requireAuth(["STUDENT"])
@@ -43,9 +43,15 @@ export async function getAvailableRoomsAction(filters?: {
       orderBy: [{ dormitory: { name: "asc" } }, { roomNumber: "asc" }],
     })
 
+    // Convert Decimal to number for client components
+    const serializedRooms = rooms.map(room => ({
+      ...room,
+      pricePerSemester: Number(room.pricePerSemester),
+    }))
+
     return {
       success: true,
-      data: rooms,
+      data: serializedRooms,
     }
   } catch (error) {
     console.error("Get available rooms error:", error)
@@ -85,9 +91,15 @@ export async function getRoomDetailsAction(roomId: string) {
       }
     }
 
+    // Convert Decimal to number for client components
+    const serializedRoom = {
+      ...room,
+      pricePerSemester: Number(room.pricePerSemester),
+    }
+
     return {
       success: true,
-      data: room,
+      data: serializedRoom,
     }
   } catch (error) {
     console.error("Get room details error:", error)

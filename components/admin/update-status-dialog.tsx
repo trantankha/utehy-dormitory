@@ -107,7 +107,11 @@ export function UpdateStatusDialog({ registration, isOpen, onClose, onSuccess }:
               id="status"
               {...registerForm("status")}
               disabled={isLoading}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 
+              text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium 
+              placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 
+              focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed 
+              disabled:opacity-50 cursor-pointer mt-2"
             >
               <option value="">Chọn trạng thái</option>
               {registration.status === "CHO_XAC_NHAN" && (
@@ -118,7 +122,7 @@ export function UpdateStatusDialog({ registration, isOpen, onClose, onSuccess }:
               )}
               {registration.status === "DA_XAC_NHAN" && <option value="DA_THANH_TOAN">Đã thanh toán</option>}
             </select>
-            {errors.status && <p className="text-sm text-red-600">{errors.status.message}</p>}
+            {errors.status && <p className="text-sm text-red-600">Chọn trạng thái "Xác nhận" hoặc "Từ chối"</p>}
           </div>
 
           {/* Admin Notes */}
@@ -129,17 +133,20 @@ export function UpdateStatusDialog({ registration, isOpen, onClose, onSuccess }:
               {...registerForm("adminNotes")}
               disabled={isLoading}
               rows={3}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm 
+              ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none 
+              focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+              disabled:cursor-not-allowed disabled:opacity-50 mt-2"
               placeholder="Nhập ghi chú nếu có..."
             />
           </div>
 
           {/* Actions */}
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading} className="cursor-pointer">
               Hủy
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="cursor-pointer">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

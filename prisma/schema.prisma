@@ -17,13 +17,13 @@ datasource db {
 
 enum UserRole {
   STUDENT // Sinh viên
-  ADMIN   // Quản lý ký túc xá
+  ADMIN // Quản lý ký túc xá
 }
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String   // Hashed password
+  password  String // Hashed password
   role      UserRole @default(STUDENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,13 +42,13 @@ model Student {
   id          String   @id @default(cuid())
   userId      String   @unique // Foreign key to User
   studentCode String   @unique // Mã sinh viên (VD: 2024001)
-  fullName    String   // Họ và tên
-  gender      String   // Giới tính: "Nam" hoặc "Nữ"
+  fullName    String // Họ và tên
+  gender      String // Giới tính: "Nam" hoặc "Nữ"
   dateOfBirth DateTime // Ngày sinh
-  phoneNumber String   // Số điện thoại
+  phoneNumber String // Số điện thoại
   email       String   @unique // Email sinh viên
-  major       String   // Ngành học
-  course      String   // Khóa học (VD: K18, K19)
+  major       String // Ngành học
+  course      String // Khóa học (VD: K18, K19)
   address     String   @db.Text // Địa chỉ thường trú
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -66,7 +66,7 @@ model Student {
 
 enum DormitoryGender {
   NAM // Ký túc xá nam
-  NU  // Ký túc xá nữ
+  NU // Ký túc xá nữ
 }
 
 model Dormitory {
@@ -92,24 +92,24 @@ model Dormitory {
 // ============================================
 
 enum RoomType {
-  PHONG_4  // Phòng 4 người
-  PHONG_6  // Phòng 6 người
-  PHONG_8  // Phòng 8 người
+  PHONG_4 // Phòng 4 người
+  PHONG_6 // Phòng 6 người
+  PHONG_8 // Phòng 8 người
 }
 
 model Room {
-  id          String   @id @default(cuid())
-  dormitoryId String   // Foreign key to Dormitory
-  roomNumber  String   // Số phòng (VD: "101", "202")
-  floor       Int      // Tầng
-  roomType    RoomType // Loại phòng
-  capacity    Int      // Sức chứa tối đa (số giường)
-  occupied    Int      @default(0) // Số giường đã được đặt
-  pricePerSemester Decimal @db.Decimal(10, 2) // Giá thuê/học kỳ (VNĐ)
-  description String?  @db.Text // Mô tả phòng
-  isActive    Boolean  @default(true) // Trạng thái hoạt động
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  dormitoryId      String // Foreign key to Dormitory
+  roomNumber       String // Số phòng (VD: "101", "202")
+  floor            Int // Tầng
+  roomType         RoomType // Loại phòng
+  capacity         Int // Sức chứa tối đa (số giường)
+  occupied         Int      @default(0) // Số giường đã được đặt
+  pricePerSemester Decimal  @db.Decimal(10, 2) // Giá thuê/học kỳ (VNĐ)
+  description      String?  @db.Text // Mô tả phòng
+  isActive         Boolean  @default(true) // Trạng thái hoạt động
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
   dormitory     Dormitory      @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
@@ -126,15 +126,15 @@ model Room {
 
 enum BedStatus {
   AVAILABLE // Giường trống
-  OCCUPIED  // Đã có người
-  RESERVED  // Đã đặt trước
+  OCCUPIED // Đã có người
+  RESERVED // Đã đặt trước
   MAINTENANCE // Đang bảo trì
 }
 
 model Bed {
   id          String    @id @default(cuid())
-  roomId      String    // Foreign key to Room
-  bedNumber   String    // Số giường (VD: "1", "2", "A", "B")
+  roomId      String // Foreign key to Room
+  bedNumber   String // Số giường (VD: "1", "2", "A", "B")
   status      BedStatus @default(AVAILABLE)
   description String?   @db.Text
   createdAt   DateTime  @default(now())
@@ -154,10 +154,10 @@ model Bed {
 
 enum RegistrationStatus {
   CHO_XAC_NHAN // Chờ xác nhận
-  DA_XAC_NHAN  // Đã xác nhận
+  DA_XAC_NHAN // Đã xác nhận
   DA_THANH_TOAN // Đã thanh toán
-  DA_HUY       // Đã hủy
-  TU_CHOI      // Từ chối
+  DA_HUY // Đã hủy
+  TU_CHOI // Từ chối
 }
 
 enum Semester {
@@ -168,20 +168,20 @@ enum Semester {
 }
 
 model Registration {
-  id              String             @id @default(cuid())
-  studentId       String             // Foreign key to Student
-  roomId          String             // Foreign key to Room
-  bedId           String?            // Foreign key to Bed (optional, có thể chưa chọn giường cụ thể)
-  semester        Semester           // Học kỳ đăng ký
-  status          RegistrationStatus @default(CHO_XAC_NHAN)
-  registeredAt    DateTime           @default(now()) // Thời gian đăng ký
-  confirmedAt     DateTime?          // Thời gian xác nhận
-  paidAt          DateTime?          // Thời gian thanh toán
-  cancelledAt     DateTime?          // Thời gian hủy
-  notes           String?            @db.Text // Ghi chú
-  adminNotes      String?            @db.Text // Ghi chú của admin
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id           String             @id @default(cuid())
+  studentId    String // Foreign key to Student
+  roomId       String // Foreign key to Room
+  bedId        String? // Foreign key to Bed (optional, có thể chưa chọn giường cụ thể)
+  semester     Semester // Học kỳ đăng ký
+  status       RegistrationStatus @default(CHO_XAC_NHAN)
+  registeredAt DateTime           @default(now()) // Thời gian đăng ký
+  confirmedAt  DateTime? // Thời gian xác nhận
+  paidAt       DateTime? // Thời gian thanh toán
+  cancelledAt  DateTime? // Thời gian hủy
+  notes        String?            @db.Text // Ghi chú
+  adminNotes   String?            @db.Text // Ghi chú của admin
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   // Relations
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)

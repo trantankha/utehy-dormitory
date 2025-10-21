@@ -89,13 +89,17 @@ export function RegistrationsManagement() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <Button variant={statusFilter === "" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("")}>
+            <Button variant={statusFilter === "" ? "default" : "outline"} size="sm"
+              onClick={() => setStatusFilter("")}
+              className="cursor-pointer"
+            >
               Tất cả ({registrations.length})
             </Button>
             <Button
               variant={statusFilter === "CHO_XAC_NHAN" ? "default" : "outline"}
               size="sm"
               onClick={() => setStatusFilter("CHO_XAC_NHAN")}
+              className="cursor-pointer"
             >
               Chờ xác nhận ({registrations.filter((r) => r.status === "CHO_XAC_NHAN").length})
             </Button>
@@ -103,6 +107,7 @@ export function RegistrationsManagement() {
               variant={statusFilter === "DA_XAC_NHAN" ? "default" : "outline"}
               size="sm"
               onClick={() => setStatusFilter("DA_XAC_NHAN")}
+              className="cursor-pointer"
             >
               Đã xác nhận ({registrations.filter((r) => r.status === "DA_XAC_NHAN").length})
             </Button>
@@ -110,6 +115,7 @@ export function RegistrationsManagement() {
               variant={statusFilter === "DA_THANH_TOAN" ? "default" : "outline"}
               size="sm"
               onClick={() => setStatusFilter("DA_THANH_TOAN")}
+              className="cursor-pointer"
             >
               Đã thanh toán ({registrations.filter((r) => r.status === "DA_THANH_TOAN").length})
             </Button>

@@ -5,9 +5,9 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'UTEHY - Dormitory | Quản lý Ký túc xá trường Đại học Kỹ thuật Hưng Yên',
+  description: 'Hệ thống quản lý Ký túc xá trường Đại học Kỹ thuật Hưng Yên',
+  icons: { icon: "/logo-utehy.ico" },
 }
 
 export default function RootLayout({

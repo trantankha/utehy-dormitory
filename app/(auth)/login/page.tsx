@@ -2,6 +2,7 @@ import { LoginForm } from "@/components/forms/login-form"
 import { getCurrentUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 
 export default async function LoginPage() {
   // Redirect if already logged in
@@ -20,10 +21,20 @@ export default async function LoginPage() {
         <div className="bg-white rounded-lg shadow-xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-28 h-28 rounded-full overflow-hidden">
+                <Image
+                  src="/logo-utehy.png"
+                  alt="UTEHY Logo"
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
             <p className="text-gray-600">Hệ thống Đăng ký Ký túc xá UTEHY</p>
           </div>
-
           {/* Login Form */}
           <LoginForm />
 
@@ -38,7 +49,7 @@ export default async function LoginPage() {
           </div>
 
           {/* Demo Accounts */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
+          {/* <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center mb-3">Tài khoản demo:</p>
             <div className="space-y-2 text-xs text-gray-600">
               <div className="bg-gray-50 p-2 rounded">
@@ -48,7 +59,7 @@ export default async function LoginPage() {
                 <strong>Sinh viên:</strong> student1@utehy.edu.vn / student123
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

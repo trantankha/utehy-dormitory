@@ -5,8 +5,9 @@ import { redirect } from "next/navigation"
 import { StudentNav } from "@/components/layouts/student-nav"
 
 export const metadata: Metadata = {
-  title: "Sinh viên - UTEHY Dormitory",
+  title: "Cổng thông tin sinh viên | UTEHY - Hệ thống quản lý ký túc xá",
   description: "Cổng thông tin sinh viên",
+  icons: { icon: "/logo-utehy.ico" },
 }
 
 export default async function StudentLayout({

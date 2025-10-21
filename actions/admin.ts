@@ -36,9 +36,18 @@ export async function getAllRegistrationsAction(filters?: { status?: string; sem
       },
     })
 
+    // Convert Decimal to number for client components
+    const serializedRegistrations = registrations.map(registration => ({
+      ...registration,
+      room: {
+        ...registration.room,
+        pricePerSemester: Number(registration.room.pricePerSemester),
+      },
+    }))
+
     return {
       success: true,
-      data: registrations,
+      data: serializedRegistrations,
     }
   } catch (error) {
     console.error("Get all registrations error:", error)
@@ -268,9 +277,15 @@ export async function getAllRoomsAction() {
       orderBy: [{ dormitory: { name: "asc" } }, { roomNumber: "asc" }],
     })
 
+    // Convert Decimal to number for client components
+    const serializedRooms = rooms.map(room => ({
+      ...room,
+      pricePerSemester: Number(room.pricePerSemester),
+    }))
+
     return {
       success: true,
-      data: rooms,
+      data: serializedRooms,
     }
   } catch (error) {
     console.error("Get all rooms error:", error)

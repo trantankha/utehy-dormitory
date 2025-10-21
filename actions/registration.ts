@@ -123,7 +123,7 @@ export async function createRegistrationAction(data: RegistrationInput) {
         data: {
           studentId: user.studentId!,
           roomId: validatedData.roomId,
-          bedId: validatedData.bedId,
+          ...(validatedData.bedId && { bedId: validatedData.bedId }),
           semester: validatedData.semester,
           status: RegistrationStatus.CHO_XAC_NHAN,
           notes: validatedData.notes,
@@ -280,9 +280,18 @@ export async function getStudentRegistrationsAction() {
       },
     })
 
+    // Convert Decimal to number for client components
+    const serializedRegistrations = registrations.map(registration => ({
+      ...registration,
+      room: {
+        ...registration.room,
+        pricePerSemester: Number(registration.room.pricePerSemester),
+      },
+    }))
+
     return {
       success: true,
-      data: registrations,
+      data: serializedRegistrations,
     }
   } catch (error) {
     console.error("Get student registrations error:", error)

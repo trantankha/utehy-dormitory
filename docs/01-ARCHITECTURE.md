@@ -6,7 +6,7 @@
 
 \`\`\`
 ┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                          │
+│                        CLIENT LAYER                         │
 │  ┌──────────────────┐              ┌──────────────────┐     │
 │  │  Student Portal  │              │  Admin Dashboard │     │
 │  │  (Next.js Pages) │              │  (Next.js Pages) │     │
@@ -15,13 +15,13 @@
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    MIDDLEWARE LAYER                          │
-│              (Authentication & Authorization)                │
+│                    MIDDLEWARE LAYER                         │
+│              (Authentication & Authorization)               │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     APPLICATION LAYER                        │
+│                     APPLICATION LAYER                       │
 │  ┌──────────────────┐              ┌──────────────────┐     │
 │  │ Server Actions   │              │   API Routes     │     │
 │  │ (Business Logic) │              │  (RESTful APIs)  │     │
@@ -30,14 +30,14 @@
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      DATA ACCESS LAYER                       │
-│                      (Prisma ORM)                            │
+│                      DATA ACCESS LAYER                      │
+│                      (Prisma ORM)                           │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      DATABASE LAYER                          │
-│                      (PostgreSQL)                            │
+│                      DATABASE LAYER                         │
+│                      (PostgreSQL)                           │
 └─────────────────────────────────────────────────────────────┘
 \`\`\`
 

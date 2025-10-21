@@ -55,7 +55,7 @@ export function AdminNav({ user }: AdminNavProps) {
               <span className="font-medium">Admin:</span> {user.email}
             </span>
             <form action={logoutAction}>
-              <Button type="submit" variant="outline" size="sm">
+              <Button type="submit" variant="outline" size="sm" className="cursor-pointer">
                 Đăng xuất
               </Button>
             </form>
