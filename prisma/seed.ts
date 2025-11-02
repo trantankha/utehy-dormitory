@@ -10,7 +10,7 @@ async function main() {
   console.log("🌱 Starting database seeding...")
 
   // 1. Tạo Admin User
-  const adminPassword = await bcrypt.hash("admin123456", 10)
+  const adminPassword = await bcrypt.hash("admin123", 10)
   const admin = await prisma.user.upsert({
     where: { email: "admin@utehy.edu.vn" },
     update: {},
