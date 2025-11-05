@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { getAllStudentsAction } from "@/actions/admin"
+import { exportStudentsExcelAction } from "@/actions/excel"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2 } from "lucide-react"
+import { Loader2, Download } from "lucide-react"
 import type { Student, User, Registration } from "@prisma/client"
 
 type StudentWithRelations = Student & {
@@ -31,6 +33,24 @@ export function StudentsManagement() {
     setIsLoading(false)
   }
 
+  // Excel export function
+  const handleExportExcel = async () => {
+    const result = await exportStudentsExcelAction()
+
+    if (result.success) {
+      // Create download link
+      const link = document.createElement('a')
+      link.href = `data:${result.data?.mimeType};base64,${result.data?.buffer}`
+      link.download = result.data!.fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      // Handle error - you might want to show a toast or alert
+      console.error("Export failed:", result.error)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -52,11 +72,16 @@ export function StudentsManagement() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Tổng số sinh viên: {students.length}</CardTitle>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-between">
+        <Card className="flex-1 max-w-xs">
+          <CardTitle className="text-lg px-3">Tổng số sinh viên: {students.length}</CardTitle>
+        </Card>
+
+        <Button onClick={handleExportExcel}>
+          <Download className="mr-2 h-4 w-4" />
+          Xuất Excel
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 gap-6">
         {students.map((student) => (

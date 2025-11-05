@@ -47,6 +47,7 @@ export async function getAvailableRoomsAction(filters?: {
     const serializedRooms = rooms.map(room => ({
       ...room,
       pricePerSemester: Number(room.pricePerSemester),
+      dormitory: { ...room.dormitory },
     }))
 
     return {
@@ -95,6 +96,7 @@ export async function getRoomDetailsAction(roomId: string) {
     const serializedRoom = {
       ...room,
       pricePerSemester: Number(room.pricePerSemester),
+      dormitory: { ...room.dormitory },
     }
 
     return {
@@ -137,6 +139,43 @@ export async function getDormitoriesAction() {
     return {
       success: false,
       error: "Đã xảy ra lỗi khi lấy danh sách ký túc xá",
+      data: [],
+    }
+  }
+}
+
+// ============================================
+// GET ALL ROOMS (Admin can view all rooms)
+// ============================================
+
+export async function getAllRoomsAction() {
+  try {
+    await requireAuth(["ADMIN"])
+
+    const rooms = await prisma.room.findMany({
+      include: {
+        dormitory: true,
+        beds: true,
+      },
+      orderBy: [{ dormitory: { name: "asc" } }, { roomNumber: "asc" }],
+    })
+
+    // Convert Decimal to number for client components
+    const serializedRooms = rooms.map(room => ({
+      ...room,
+      pricePerSemester: Number(room.pricePerSemester),
+      dormitory: { ...room.dormitory },
+    }))
+
+    return {
+      success: true,
+      data: serializedRooms,
+    }
+  } catch (error) {
+    console.error("Get all rooms error:", error)
+    return {
+      success: false,
+      error: "Đã xảy ra lỗi khi lấy danh sách phòng",
       data: [],
     }
   }

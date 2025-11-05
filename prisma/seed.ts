@@ -25,7 +25,7 @@ async function main() {
   // 2. Tạo Student Users và Student Records
   const students = []
   for (let i = 1; i <= 5; i++) {
-    const studentPassword = await bcrypt.hash("student123", 10)
+    const studentPassword = await bcrypt.hash("123456", 10)
     const user = await prisma.user.create({
       data: {
         email: `student${i}@utehy.edu.vn`,
@@ -39,7 +39,7 @@ async function main() {
             dateOfBirth: new Date(2002, i, 15),
             phoneNumber: `098765432${i}`,
             email: `student${i}@utehy.edu.vn`,
-            major: i % 2 === 0 ? "Công nghệ thông tin" : "Kỹ thuật điện",
+            major: i % 2 === 0 ? "Công nghệ thông tin" : "Khoa học máy tính",
             course: "K18",
             address: `Số ${i}, Đường ABC, Hưng Yên`,
           },

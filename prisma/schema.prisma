@@ -115,6 +115,8 @@ model Room {
   dormitory     Dormitory      @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
   beds          Bed[] // Một phòng có nhiều giường
   registrations Registration[] // Một phòng có nhiều phiếu đăng ký
+  meterReadings MeterReading[] // Ghi chỉ số điện nước
+  utilityBills  UtilityBill[] // Hóa đơn điện nước
 
   @@unique([dormitoryId, roomNumber]) // Số phòng phải unique trong một ký túc xá
   @@map("rooms")
@@ -189,6 +191,75 @@ model Registration {
   bed     Bed?    @relation(fields: [bedId], references: [id], onDelete: SetNull)
 
   @@map("registrations")
+}
+
+// ============================================
+// UTILITY MANAGEMENT (Điện Nước)
+// ============================================
+
+enum BillStatus {
+  PENDING // Chờ thanh toán
+  PAID // Đã thanh toán
+  OVERDUE // Quá hạn
+  CANCELLED // Đã hủy
+}
+
+model UtilityRate {
+  id               String   @id @default(cuid())
+  electricityRate  Decimal  @db.Decimal(10, 2) // Đơn giá điện (VNĐ/kWh)
+  waterRate        Decimal  @db.Decimal(10, 2) // Đơn giá nước (VNĐ/m³)
+  effectiveFrom    DateTime // Ngày bắt đầu áp dụng
+  effectiveTo      DateTime? // Ngày kết thúc áp dụng (null = hiện tại)
+  description      String?  @db.Text // Mô tả biểu giá
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("utility_rates")
+}
+
+model MeterReading {
+  id                String   @id @default(cuid())
+  roomId            String // Foreign key to Room
+  month             Int // Tháng (1-12)
+  year              Int // Năm
+  electricityReading Int      @default(0) // Chỉ số điện (kWh)
+  waterReading      Int      @default(0) // Chỉ số nước (m³)
+  recordedBy        String // Admin ID ghi nhận
+  recordedAt        DateTime @default(now()) // Thời gian ghi nhận
+  notes             String?  @db.Text // Ghi chú
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, month, year]) // Mỗi phòng chỉ có 1 lần ghi chỉ số/tháng
+  @@map("meter_readings")
+}
+
+model UtilityBill {
+  id                String     @id @default(cuid())
+  roomId            String // Foreign key to Room
+  month             Int // Tháng
+  year              Int // Năm
+  electricityUsage  Int        @default(0) // Tiêu thụ điện (kWh)
+  waterUsage        Int        @default(0) // Tiêu thụ nước (m³)
+  electricityAmount Decimal    @db.Decimal(10, 2) @default(0) // Tiền điện
+  waterAmount       Decimal    @db.Decimal(10, 2) @default(0) // Tiền nước
+  totalAmount       Decimal    @db.Decimal(10, 2) @default(0) // Tổng tiền
+  status            BillStatus @default(PENDING) // Trạng thái
+  dueDate           DateTime // Hạn thanh toán
+  paidAt            DateTime? // Thời gian thanh toán
+  paidBy            String? // Người thanh toán
+  notes             String?    @db.Text // Ghi chú
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Relations
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, month, year]) // Mỗi phòng chỉ có 1 hóa đơn/tháng
+  @@map("utility_bills")
 }
 
 // ============================================

@@ -19,6 +19,7 @@ export function AdminNav({ user }: AdminNavProps) {
     { href: "/admin/registrations", label: "Phiếu đăng ký" },
     { href: "/admin/students", label: "Sinh viên" },
     { href: "/admin/rooms", label: "Phòng" },
+    { href: "/admin/utility-management", label: "Điện nước" },
     { href: "/admin/dormitories", label: "Ký túc xá" },
   ]
 
