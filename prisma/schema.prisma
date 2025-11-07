@@ -56,6 +56,7 @@ model Student {
   // Relations
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   registrations Registration[] // Một sinh viên có thể có nhiều phiếu đăng ký
+  payments      Payment[] // Một sinh viên có thể có nhiều thanh toán
 
   @@map("students")
 }
@@ -189,8 +190,58 @@ model Registration {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   room    Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
   bed     Bed?    @relation(fields: [bedId], references: [id], onDelete: SetNull)
+  payment Payment? // Liên kết với thanh toán (optional)
 
   @@map("registrations")
+}
+
+// ============================================
+// PAYMENT MANAGEMENT
+// ============================================
+
+enum PaymentStatus {
+  PENDING     // Chờ thanh toán
+  PROCESSING  // Đang xử lý
+  COMPLETED   // Hoàn thành
+  FAILED      // Thất bại
+  CANCELLED   // Đã hủy
+  REFUNDED    // Đã hoàn tiền
+}
+
+enum PaymentMethod {
+  VNPAY_QR    // VNPay QR Code
+  VNPAY_ATM   // VNPay ATM
+  VNPAY_BANK  // VNPay Internet Banking
+  CASH        // Tiền mặt (thanh toán thủ công)
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  amount            Decimal       @db.Decimal(10, 2) // Số tiền thanh toán
+  currency          String        @default("VND") // Đơn vị tiền tệ
+  status            PaymentStatus @default(PENDING)
+  method            PaymentMethod @default(VNPAY_QR)
+  transactionId     String?       @unique // Mã giao dịch từ VNPay
+  orderInfo         String // Thông tin đơn hàng
+  paymentUrl        String? // URL thanh toán VNPay
+  qrCodeUrl         String? // URL QR code
+  paidAt            DateTime? // Thời gian thanh toán thành công
+  failedAt          DateTime? // Thời gian thất bại
+  cancelledAt       DateTime? // Thời gian hủy
+  refundedAt        DateTime? // Thời gian hoàn tiền
+  refundAmount      Decimal?      @db.Decimal(10, 2) // Số tiền hoàn
+  refundReason      String? // Lý do hoàn tiền
+  notes             String?       @db.Text // Ghi chú
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  registrationId    String?       @unique // Liên kết với phiếu đăng ký
+  registration      Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  studentId         String // Sinh viên thực hiện thanh toán
+  student           Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }
 
 // ============================================
