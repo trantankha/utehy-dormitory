@@ -29,6 +29,29 @@ export default async function StudentDashboardPage() {
     },
   })
 
+  // Get transfer requests
+  const transferRequests = await prisma.transferRequest.findMany({
+    where: {
+      studentId: user.studentId,
+    },
+    include: {
+      currentRoom: {
+        include: {
+          dormitory: true,
+        },
+      },
+      newRoom: {
+        include: {
+          dormitory: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 3, // Show only recent 3
+  })
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -123,6 +146,49 @@ export default async function StudentDashboardPage() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transfer Requests */}
+      {transferRequests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Yêu cầu chuyển phòng gần đây</CardTitle>
+            <CardDescription>Yêu cầu chuyển phòng của bạn</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {transferRequests.slice(0, 3).map((request) => (
+                <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-semibold">
+                      {request.currentRoom.dormitory.name} → {request.newRoom.dormitory.name}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Phòng {request.currentRoom.roomNumber} → Phòng {request.newRoom.roomNumber}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(request.createdAt).toLocaleDateString("vi-VN")} •{" "}
+                      {request.status === "CHO_XAC_NHAN" && "Chờ xác nhận"}
+                      {request.status === "DA_DUYET" && "Đã duyệt"}
+                      {request.status === "TU_CHOI" && "Từ chối"}
+                      {request.status === "DA_HOAN_TAT" && "Đã hoàn tất"}
+                    </p>
+                  </div>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/student/transfer-room">Chi tiết</Link>
+                  </Button>
+                </div>
+              ))}
+            </div>
+            {transferRequests.length > 3 && (
+              <div className="mt-4 text-center">
+                <Button asChild variant="outline">
+                  <Link href="/student/transfer-room">Xem tất cả</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

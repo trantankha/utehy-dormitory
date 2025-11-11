@@ -54,9 +54,10 @@ model Student {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  registrations Registration[] // Một sinh viên có thể có nhiều phiếu đăng ký
-  payments      Payment[] // Một sinh viên có thể có nhiều thanh toán
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registrations    Registration[] // Một sinh viên có thể có nhiều phiếu đăng ký
+  payments         Payment[] // Một sinh viên có thể có nhiều thanh toán
+  transferRequests TransferRequest[] // Một sinh viên có thể có nhiều yêu cầu chuyển phòng
 
   @@map("students")
 }
@@ -113,11 +114,13 @@ model Room {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  dormitory     Dormitory      @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
-  beds          Bed[] // Một phòng có nhiều giường
-  registrations Registration[] // Một phòng có nhiều phiếu đăng ký
-  meterReadings MeterReading[] // Ghi chỉ số điện nước
-  utilityBills  UtilityBill[] // Hóa đơn điện nước
+  dormitory        Dormitory         @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
+  beds             Bed[] // Một phòng có nhiều giường
+  registrations    Registration[] // Một phòng có nhiều phiếu đăng ký
+  meterReadings    MeterReading[] // Ghi chỉ số điện nước
+  utilityBills     UtilityBill[] // Hóa đơn điện nước
+  currentTransfers TransferRequest[] @relation("CurrentRoom") // Yêu cầu chuyển phòng từ phòng này
+  newTransfers     TransferRequest[] @relation("NewRoom") // Yêu cầu chuyển phòng đến phòng này
 
   @@unique([dormitoryId, roomNumber]) // Số phòng phải unique trong một ký túc xá
   @@map("rooms")
@@ -144,8 +147,10 @@ model Bed {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  room          Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  registrations Registration[] // Một giường có thể có nhiều phiếu đăng ký (theo thời gian)
+  room             Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  registrations    Registration[] // Một giường có thể có nhiều phiếu đăng ký (theo thời gian)
+  currentTransfers TransferRequest[] @relation("CurrentBed") // Yêu cầu chuyển phòng từ giường này
+  newTransfers     TransferRequest[] @relation("NewBed") // Yêu cầu chuyển phòng đến giường này
 
   @@unique([roomId, bedNumber]) // Số giường phải unique trong một phòng
   @@map("beds")
@@ -161,6 +166,13 @@ enum RegistrationStatus {
   DA_THANH_TOAN // Đã thanh toán
   DA_HUY // Đã hủy
   TU_CHOI // Từ chối
+}
+
+enum TransferStatus {
+  CHO_XAC_NHAN // Chờ xác nhận
+  DA_DUYET // Đã duyệt
+  TU_CHOI // Từ chối
+  DA_HOAN_TAT // Đã hoàn tất
 }
 
 enum Semester {
@@ -187,9 +199,9 @@ model Registration {
   updatedAt    DateTime           @updatedAt
 
   // Relations
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  room    Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
-  bed     Bed?    @relation(fields: [bedId], references: [id], onDelete: SetNull)
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  room    Room     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  bed     Bed?     @relation(fields: [bedId], references: [id], onDelete: SetNull)
   payment Payment? // Liên kết với thanh toán (optional)
 
   @@map("registrations")
@@ -200,46 +212,46 @@ model Registration {
 // ============================================
 
 enum PaymentStatus {
-  PENDING     // Chờ thanh toán
-  PROCESSING  // Đang xử lý
-  COMPLETED   // Hoàn thành
-  FAILED      // Thất bại
-  CANCELLED   // Đã hủy
-  REFUNDED    // Đã hoàn tiền
+  PENDING // Chờ thanh toán
+  PROCESSING // Đang xử lý
+  COMPLETED // Hoàn thành
+  FAILED // Thất bại
+  CANCELLED // Đã hủy
+  REFUNDED // Đã hoàn tiền
 }
 
 enum PaymentMethod {
-  VNPAY_QR    // VNPay QR Code
-  VNPAY_ATM   // VNPay ATM
-  VNPAY_BANK  // VNPay Internet Banking
-  CASH        // Tiền mặt (thanh toán thủ công)
+  VNPAY_QR // VNPay QR Code
+  VNPAY_ATM // VNPay ATM
+  VNPAY_BANK // VNPay Internet Banking
+  CASH // Tiền mặt (thanh toán thủ công)
 }
 
 model Payment {
-  id                String        @id @default(cuid())
-  amount            Decimal       @db.Decimal(10, 2) // Số tiền thanh toán
-  currency          String        @default("VND") // Đơn vị tiền tệ
-  status            PaymentStatus @default(PENDING)
-  method            PaymentMethod @default(VNPAY_QR)
-  transactionId     String?       @unique // Mã giao dịch từ VNPay
-  orderInfo         String // Thông tin đơn hàng
-  paymentUrl        String? // URL thanh toán VNPay
-  qrCodeUrl         String? // URL QR code
-  paidAt            DateTime? // Thời gian thanh toán thành công
-  failedAt          DateTime? // Thời gian thất bại
-  cancelledAt       DateTime? // Thời gian hủy
-  refundedAt        DateTime? // Thời gian hoàn tiền
-  refundAmount      Decimal?      @db.Decimal(10, 2) // Số tiền hoàn
-  refundReason      String? // Lý do hoàn tiền
-  notes             String?       @db.Text // Ghi chú
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  amount        Decimal       @db.Decimal(10, 2) // Số tiền thanh toán
+  currency      String        @default("VND") // Đơn vị tiền tệ
+  status        PaymentStatus @default(PENDING)
+  method        PaymentMethod @default(VNPAY_QR)
+  transactionId String?       @unique // Mã giao dịch từ VNPay
+  orderInfo     String // Thông tin đơn hàng
+  paymentUrl    String? // URL thanh toán VNPay
+  qrCodeUrl     String? // URL QR code
+  paidAt        DateTime? // Thời gian thanh toán thành công
+  failedAt      DateTime? // Thời gian thất bại
+  cancelledAt   DateTime? // Thời gian hủy
+  refundedAt    DateTime? // Thời gian hoàn tiền
+  refundAmount  Decimal?      @db.Decimal(10, 2) // Số tiền hoàn
+  refundReason  String? // Lý do hoàn tiền
+  notes         String?       @db.Text // Ghi chú
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Relations
-  registrationId    String?       @unique // Liên kết với phiếu đăng ký
-  registration      Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
-  studentId         String // Sinh viên thực hiện thanh toán
-  student           Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  registrationId String?       @unique // Liên kết với phiếu đăng ký
+  registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  studentId      String // Sinh viên thực hiện thanh toán
+  student        Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
@@ -256,30 +268,30 @@ enum BillStatus {
 }
 
 model UtilityRate {
-  id               String   @id @default(cuid())
-  electricityRate  Decimal  @db.Decimal(10, 2) // Đơn giá điện (VNĐ/kWh)
-  waterRate        Decimal  @db.Decimal(10, 2) // Đơn giá nước (VNĐ/m³)
-  effectiveFrom    DateTime // Ngày bắt đầu áp dụng
-  effectiveTo      DateTime? // Ngày kết thúc áp dụng (null = hiện tại)
-  description      String?  @db.Text // Mô tả biểu giá
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String    @id @default(cuid())
+  electricityRate Decimal   @db.Decimal(10, 2) // Đơn giá điện (VNĐ/kWh)
+  waterRate       Decimal   @db.Decimal(10, 2) // Đơn giá nước (VNĐ/m³)
+  effectiveFrom   DateTime // Ngày bắt đầu áp dụng
+  effectiveTo     DateTime? // Ngày kết thúc áp dụng (null = hiện tại)
+  description     String?   @db.Text // Mô tả biểu giá
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@map("utility_rates")
 }
 
 model MeterReading {
-  id                String   @id @default(cuid())
-  roomId            String // Foreign key to Room
-  month             Int // Tháng (1-12)
-  year              Int // Năm
+  id                 String   @id @default(cuid())
+  roomId             String // Foreign key to Room
+  month              Int // Tháng (1-12)
+  year               Int // Năm
   electricityReading Int      @default(0) // Chỉ số điện (kWh)
-  waterReading      Int      @default(0) // Chỉ số nước (m³)
-  recordedBy        String // Admin ID ghi nhận
-  recordedAt        DateTime @default(now()) // Thời gian ghi nhận
-  notes             String?  @db.Text // Ghi chú
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  waterReading       Int      @default(0) // Chỉ số nước (m³)
+  recordedBy         String // Admin ID ghi nhận
+  recordedAt         DateTime @default(now()) // Thời gian ghi nhận
+  notes              String?  @db.Text // Ghi chú
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relations
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -295,9 +307,9 @@ model UtilityBill {
   year              Int // Năm
   electricityUsage  Int        @default(0) // Tiêu thụ điện (kWh)
   waterUsage        Int        @default(0) // Tiêu thụ nước (m³)
-  electricityAmount Decimal    @db.Decimal(10, 2) @default(0) // Tiền điện
-  waterAmount       Decimal    @db.Decimal(10, 2) @default(0) // Tiền nước
-  totalAmount       Decimal    @db.Decimal(10, 2) @default(0) // Tổng tiền
+  electricityAmount Decimal    @default(0) @db.Decimal(10, 2) // Tiền điện
+  waterAmount       Decimal    @default(0) @db.Decimal(10, 2) // Tiền nước
+  totalAmount       Decimal    @default(0) @db.Decimal(10, 2) // Tổng tiền
   status            BillStatus @default(PENDING) // Trạng thái
   dueDate           DateTime // Hạn thanh toán
   paidAt            DateTime? // Thời gian thanh toán
@@ -311,6 +323,38 @@ model UtilityBill {
 
   @@unique([roomId, month, year]) // Mỗi phòng chỉ có 1 hóa đơn/tháng
   @@map("utility_bills")
+}
+
+// ============================================
+// TRANSFER REQUEST MANAGEMENT
+// ============================================
+
+model TransferRequest {
+  id            String         @id @default(cuid())
+  studentId     String // Foreign key to Student
+  currentRoomId String // Foreign key to Room (phòng hiện tại)
+  newRoomId     String // Foreign key to Room (phòng mới)
+  currentBedId  String? // Foreign key to Bed (giường hiện tại)
+  newBedId      String? // Foreign key to Bed (giường mới)
+  semester      Semester // Học kỳ chuyển phòng
+  reason        String         @db.Text // Lý do chuyển phòng
+  status        TransferStatus @default(CHO_XAC_NHAN)
+  requestedAt   DateTime       @default(now()) // Thời gian yêu cầu
+  approvedAt    DateTime? // Thời gian duyệt
+  rejectedAt    DateTime? // Thời gian từ chối
+  completedAt   DateTime? // Thời gian hoàn tất
+  adminNotes    String?        @db.Text // Ghi chú của admin
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  currentRoom Room    @relation("CurrentRoom", fields: [currentRoomId], references: [id])
+  newRoom     Room    @relation("NewRoom", fields: [newRoomId], references: [id])
+  currentBed  Bed?    @relation("CurrentBed", fields: [currentBedId], references: [id])
+  newBed      Bed?    @relation("NewBed", fields: [newBedId], references: [id])
+
+  @@map("transfer_requests")
 }
 
 // ============================================

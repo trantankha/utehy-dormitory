@@ -2,7 +2,6 @@
 // Xử lý authentication và session management
 
 import { cookies } from "next/headers"
-import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
 import type { UserRole } from "@prisma/client"
 

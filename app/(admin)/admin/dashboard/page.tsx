@@ -1,6 +1,7 @@
 import { getDashboardStatsAction, getAllRegistrationsAction } from "@/actions/admin"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { prisma } from "@/lib/prisma"
 
 export default async function AdminDashboardPage() {
   const [statsResult, recentRegistrationsResult] = await Promise.all([
@@ -10,6 +11,19 @@ export default async function AdminDashboardPage() {
 
   const stats = statsResult.data
   const recentRegistrations = recentRegistrationsResult.data.slice(0, 5)
+
+  // Get transfer request stats
+  const transferStats = await prisma.transferRequest.groupBy({
+    by: ['status'],
+    _count: {
+      status: true,
+    },
+  })
+
+  const transferStatsMap = transferStats.reduce((acc, stat) => {
+    acc[stat.status] = stat._count.status
+    return acc
+  }, {} as Record<string, number>)
 
   return (
     <div className="space-y-8">
@@ -97,6 +111,34 @@ export default async function AdminDashboardPage() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Transfer Request Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thống kê yêu cầu chuyển phòng</CardTitle>
+          <CardDescription>Tình trạng các yêu cầu chuyển phòng</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{transferStatsMap.CHO_XAC_NHAN || 0}</div>
+              <div className="text-sm text-gray-600">Chờ xác nhận</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{transferStatsMap.DA_DUYET || 0}</div>
+              <div className="text-sm text-gray-600">Đã duyệt</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{transferStatsMap.TU_CHOI || 0}</div>
+              <div className="text-sm text-gray-600">Từ chối</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{transferStatsMap.DA_HOAN_TAT || 0}</div>
+              <div className="text-sm text-gray-600">Đã hoàn tất</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

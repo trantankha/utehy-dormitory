@@ -18,6 +18,7 @@ export function StudentNav({ user }: StudentNavProps) {
     { href: "/student/dashboard", label: "Trang chủ" },
     { href: "/student/register-room", label: "Đăng ký phòng" },
     { href: "/student/my-registrations", label: "Phiếu đăng ký" },
+    { href: "/student/transfer-room", label: "Chuyển phòng" },
     { href: "/student/utility-bills", label: "Hóa đơn điện nước" },
   ]
 

@@ -20,8 +20,8 @@ Hệ thống quản lý đăng ký ký túc xá cho trường Đại học Sư p
 
 Hệ thống đăng ký ký túc xá UTEHY là một ứng dụng web full-stack cho phép:
 
-- **Sinh viên**: Đăng ký phòng ký túc xá, xem và quản lý phiếu đăng ký của mình
-- **Quản lý KTX**: Quản lý danh sách sinh viên, phòng, ký túc xá, và xử lý các phiếu đăng ký
+- **Sinh viên**: Đăng ký phòng ký túc xá, xem và quản lý phiếu đăng ký của mình, thanh toán tiền ký túc xá trực tuyến
+- **Quản lý KTX**: Quản lý danh sách sinh viên, phòng, ký túc xá, xử lý các phiếu đăng ký và quản lý thanh toán
 
 Hệ thống tuân thủ các nguyên tắc thiết kế hiện đại (DRY, SOLID) và có cấu trúc rõ ràng, dễ bảo trì.
 
@@ -95,6 +95,7 @@ Hệ thống tuân thủ các nguyên tắc thiết kế hiện đại (DRY, SOL
 - **Prisma ORM** - Type-safe database client
 - **bcryptjs** - Password hashing
 - **iron-session** - Secure session management
+- **VNPay Integration** - Online payment processing
 
 ### Database
 - **PostgreSQL** - Production database
@@ -142,6 +143,13 @@ SESSION_SECRET="your-super-secret-key-min-32-characters-long"
 
 # App URL
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# VNPay Configuration (Production)
+VNPAY_TMN_CODE=UTEHY001
+VNPAY_HASH_SECRET=your-vnpay-secret-key-here
+VNPAY_URL=https://payment.vnpay.vn/paymentv2/vpcpay.html
+VNPAY_RETURN_URL=http://localhost:3000/api/payment/return
+VNPAY_IPN_URL=http://localhost:3000/api/payment/ipn
 \`\`\`
 
 **Lưu ý quan trọng về SESSION_SECRET:**
@@ -250,6 +258,12 @@ utehy-dormitory-system/
 - Xem chi tiết từng phiếu
 - Hủy phiếu (chỉ khi trạng thái "Chờ xác nhận")
 
+#### 4. Thanh Toán Ký Túc Xá
+- Thanh toán tiền phòng trực tuyến qua VNPay
+- Hỗ trợ QR Code, ATM, Internet Banking
+- Xem lịch sử thanh toán
+- Tải hóa đơn thanh toán
+
 ### Dành Cho Quản Lý KTX
 
 #### 1. Dashboard
@@ -271,6 +285,12 @@ utehy-dormitory-system/
 - Xem danh sách phòng và ký túc xá
 - Xem tình trạng phòng (số giường còn trống)
 - Thống kê theo ký túc xá
+
+#### 5. Quản Lý Thanh Toán
+- Xem danh sách thanh toán của sinh viên
+- Lọc theo trạng thái thanh toán, kỳ học
+- Xem chi tiết giao dịch
+- Xuất báo cáo thanh toán
 
 ---
 
@@ -388,8 +408,8 @@ NEXT_PUBLIC_APP_URL=<production-url>
 - ✅ Admin management dashboard
 - ✅ Role-based authorization
 
-### Phase 2 (Future)
-- [ ] Payment integration
+### Phase 2 (Completed)
+- ✅ Payment integration (VNPay)
 - [ ] Room transfer functionality
 - [ ] Contract renewal
 - [ ] Email notifications

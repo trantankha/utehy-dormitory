@@ -2,6 +2,7 @@
 // VNPay integration for dormitory payment system
 
 import crypto from 'crypto-js'
+import moment from 'moment'
 import { PaymentMethod, PaymentStatus } from '@prisma/client'
 
 // ============================================
@@ -9,8 +10,8 @@ import { PaymentMethod, PaymentStatus } from '@prisma/client'
 // ============================================
 
 const VNPAY_CONFIG = {
-    vnp_TmnCode: process.env.VNPAY_TMN_CODE || 'UTEHY001', // Terminal ID
-    vnp_HashSecret: process.env.VNPAY_HASH_SECRET || 'UTEHY_SECRET_KEY', // Secret key
+    vnp_TmnCode: process.env.VNPAY_TMN_CODE || 'your-tmn-code', // Terminal ID
+    vnp_HashSecret: process.env.VNPAY_HASH_SECRET || 'your-secret-payment-key', // Secret key
     vnp_Url: process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html', // VNPay URL
     vnp_ReturnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:3000/api/payment/return', // Return URL
     vnp_IpnUrl: process.env.VNPAY_IPN_URL || 'http://localhost:3000/api/payment/ipn', // IPN URL
@@ -40,7 +41,7 @@ export function generateVNPayUrl(params: {
         vnp_Version: VNPAY_CONFIG.vnp_Version,
         vnp_Command: VNPAY_CONFIG.vnp_Command,
         vnp_TmnCode: VNPAY_CONFIG.vnp_TmnCode,
-        vnp_Amount: (params.amount * 100).toString(), // VNPay expects amount in smallest currency unit
+        vnp_Amount: (params.amount * 100).toString(),
         vnp_CurrCode: VNPAY_CONFIG.vnp_CurrCode,
         vnp_TxnRef: params.orderId,
         vnp_OrderInfo: params.orderInfo,
@@ -48,7 +49,7 @@ export function generateVNPayUrl(params: {
         vnp_Locale: VNPAY_CONFIG.vnp_Locale,
         vnp_ReturnUrl: VNPAY_CONFIG.vnp_ReturnUrl,
         vnp_IpAddr: params.ipAddr,
-        vnp_CreateDate: new Date().toISOString().slice(0, 19).replace(/[:-]/g, ''),
+        vnp_CreateDate: moment().format('YYYYMMDDHHmmss'),
     }
 
     // Add payment method specific parameters
@@ -62,21 +63,18 @@ export function generateVNPayUrl(params: {
 
     // Sort parameters alphabetically
     const sortedKeys = Object.keys(vnpParams).sort()
-    const sortedParams: Record<string, string> = {}
-    sortedKeys.forEach(key => {
-        sortedParams[key] = vnpParams[key]
-    })
 
-    // Generate secure hash
-    const signData = sortedKeys.map(key => `${key}=${encodeURIComponent(sortedParams[key])}`).join('&')
-    const secureHash = crypto.HmacSHA512(signData, VNPAY_CONFIG.vnp_HashSecret).toString()
+    // Generate secure hash on encoded values (VNPay standard)
+    const signData = sortedKeys.map(key => `${key}=${encodeURIComponent(vnpParams[key])}`).join('&')
+    const secureHash = crypto.HmacSHA512(signData, VNPAY_CONFIG.vnp_HashSecret).toString().toUpperCase()
 
     // Add secure hash to parameters
-    sortedParams.vnp_SecureHash = secureHash
+    vnpParams.vnp_SecureHash = secureHash
 
-    // Build payment URL
-    const queryString = Object.keys(sortedParams)
-        .map(key => `${key}=${encodeURIComponent(sortedParams[key])}`)
+    // Build payment URL with encoded values
+    const queryString = Object.keys(vnpParams)
+        .sort() // Ensure consistent order
+        .map(key => `${key}=${encodeURIComponent(vnpParams[key])}`)
         .join('&')
 
     return `${VNPAY_CONFIG.vnp_Url}?${queryString}`
@@ -102,10 +100,11 @@ export function verifyVNPayReturn(params: Record<string, string>): {
         const signData = sortedKeys.map(key => `${key}=${encodeURIComponent(vnpParams[key])}`).join('&')
 
         // Generate expected secure hash
-        const expectedHash = crypto.HmacSHA512(signData, VNPAY_CONFIG.vnp_HashSecret).toString()
+        const expectedHash = crypto.HmacSHA512(signData, VNPAY_CONFIG.vnp_HashSecret).toString().toUpperCase()
 
         // Verify hash
         if (expectedHash !== vnp_SecureHash) {
+            console.log('Hash verification failed:', { expected: expectedHash, received: vnp_SecureHash })
             return { isValid: false }
         }
 
@@ -157,10 +156,11 @@ export function verifyVNPayIPN(params: Record<string, string>): {
         const signData = sortedKeys.map(key => `${key}=${encodeURIComponent(vnpParams[key])}`).join('&')
 
         // Generate expected secure hash
-        const expectedHash = crypto.HmacSHA512(signData, VNPAY_CONFIG.vnp_HashSecret).toString()
+        const expectedHash = crypto.HmacSHA512(signData, VNPAY_CONFIG.vnp_HashSecret).toString().toUpperCase()
 
         // Verify hash
         if (expectedHash !== vnp_SecureHash) {
+            console.log('IPN Hash verification failed:', { expected: expectedHash, received: vnp_SecureHash })
             return { isValid: false, rspCode: '97' } // Checksum failed
         }
 
