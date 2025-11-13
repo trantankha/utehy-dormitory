@@ -14,5 +14,10 @@ export const updateRegistrationStatusSchema = z.object({
   adminNotes: z.string().optional(),
 })
 
+export const contractExtensionSchema = z.object({
+  notes: z.string().optional(),
+})
+
 export type RegistrationInput = z.infer<typeof registrationSchema>
 export type UpdateRegistrationStatusInput = z.infer<typeof updateRegistrationStatusSchema>
+export type ContractExtensionInput = z.infer<typeof contractExtensionSchema>

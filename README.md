@@ -410,8 +410,8 @@ NEXT_PUBLIC_APP_URL=<production-url>
 
 ### Phase 2 (Completed)
 - ✅ Payment integration (VNPay)
-- [ ] Room transfer functionality
-- [ ] Contract renewal
+- ✅ Room transfer functionality
+- ✅ Contract renewal
 - [ ] Email notifications
 - [ ] Mobile app
 

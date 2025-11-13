@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, CreditCard } from "lucide-react"
+import { Loader2, CreditCard, Calendar } from "lucide-react"
 import type { Registration, Room, Dormitory, Bed } from "@prisma/client"
 import { PaymentForm } from "./payment-form"
+import { ContractExtensionDialog } from "./contract-extension-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 type RegistrationWithRelations = Registration & {
@@ -24,6 +25,7 @@ export function MyRegistrationsList() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showPaymentForm, setShowPaymentForm] = useState<string | null>(null)
+  const [showExtensionDialog, setShowExtensionDialog] = useState<string | null>(null)
 
   useEffect(() => {
     loadRegistrations()
@@ -199,9 +201,22 @@ export function MyRegistrationsList() {
                 </div>
               )}
 
-              {/* Payment Actions */}
-              {registration.status === "DA_XAC_NHAN" && (
-                <div className="flex justify-end pt-2">
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-2">
+                {/* Contract Extension */}
+                {(registration.status === "DA_XAC_NHAN" || registration.status === "DA_THANH_TOAN") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowExtensionDialog(showExtensionDialog === registration.id ? null : registration.id)}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Gia hạn hợp đồng
+                  </Button>
+                )}
+
+                {/* Payment Actions */}
+                {registration.status === "DA_XAC_NHAN" && (
                   <Button
                     variant="default"
                     size="sm"
@@ -210,8 +225,8 @@ export function MyRegistrationsList() {
                     <CreditCard className="mr-2 h-4 w-4" />
                     {showPaymentForm === registration.id ? "Hủy thanh toán" : "Thanh toán"}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Payment Dialog */}
               <Dialog open={showPaymentForm === registration.id} onOpenChange={(open) => !open && setShowPaymentForm(null)}>
@@ -231,6 +246,17 @@ export function MyRegistrationsList() {
                   />
                 </DialogContent>
               </Dialog>
+
+              {/* Contract Extension Dialog */}
+              <ContractExtensionDialog
+                registration={registration}
+                open={showExtensionDialog === registration.id}
+                onOpenChange={(open) => !open && setShowExtensionDialog(null)}
+                onSuccess={() => {
+                  setShowExtensionDialog(null)
+                  loadRegistrations()
+                }}
+              />
             </CardContent>
           </Card>
         ))}

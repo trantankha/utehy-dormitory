@@ -5,7 +5,7 @@ import { getAllRegistrationsAction } from "@/actions/admin"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2 } from "lucide-react"
+import { Loader2, Calendar } from "lucide-react"
 import { UpdateStatusDialog } from "./update-status-dialog"
 import type { Registration, Student, Room, Dormitory, Bed } from "@prisma/client"
 
@@ -156,7 +156,15 @@ export function RegistrationsManagement() {
                   </div>
                   <div>
                     <p className="text-gray-600">Học kỳ</p>
-                    <p className="font-medium">{registration.semester.replace(/_/g, " ")}</p>
+                    <div className="font-medium flex items-center">
+                      <span>{registration.semester.replace(/_/g, " ")}</span>
+                      {registration.notes?.includes("Gia hạn") && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          Gia hạn
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <p className="text-gray-600">Giường</p>
