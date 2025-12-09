@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createPaymentSchema, type CreatePaymentInput } from "@/lib/validations/payment"
-import { createPaymentAction } from "@/actions/payment"
+import { createPaymentAction, createUtilityBillPaymentAction } from "@/actions/payment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -15,17 +15,19 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CreditCard, QrCode, Banknote } from "lucide-react"
 import { formatAmount, getPaymentMethodName } from "@/lib/payment"
-import { PaymentMethod } from "@prisma/client"
+type PaymentMethod = "VNPAY_QR" | "VNPAY_ATM" | "VNPAY_BANK" | "CASH"
 
 interface PaymentFormProps {
-    registrationId: string
-    roomPrice: number
-    semester: string
+    type: "registration" | "utility-bill"
+    entityId: string
+    amount: number
+    description: string
     onSuccess?: () => void
     onCancel?: () => void
+    inModal?: boolean
 }
 
-export function PaymentForm({ registrationId, roomPrice, semester, onSuccess, onCancel }: PaymentFormProps) {
+export function PaymentForm({ type, entityId, amount, description, onSuccess, onCancel, inModal }: PaymentFormProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -33,10 +35,10 @@ export function PaymentForm({ registrationId, roomPrice, semester, onSuccess, on
     const form = useForm<CreatePaymentInput>({
         resolver: zodResolver(createPaymentSchema),
         defaultValues: {
-            registrationId,
-            amount: roomPrice,
+            ...(type === "registration" ? { registrationId: entityId } : { utilityBillId: entityId }),
+            amount,
             method: "VNPAY_QR",
-            orderInfo: `Thanh toán ký túc xá học kỳ ${semester}`,
+            orderInfo: description,
             notes: "",
         },
     })
@@ -48,7 +50,9 @@ export function PaymentForm({ registrationId, roomPrice, semester, onSuccess, on
         setError(null)
 
         try {
-            const result = await createPaymentAction(data)
+            const result = type === "utility-bill"
+                ? await createUtilityBillPaymentAction(data)
+                : await createPaymentAction(data)
 
             if (result.success) {
                 if (result.data?.paymentUrl) {
@@ -83,15 +87,166 @@ export function PaymentForm({ registrationId, roomPrice, semester, onSuccess, on
         }
     }
 
+    if (inModal) {
+        return (
+            <>
+                {error && (
+                    <Alert className="mb-4" variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        {/* Amount */}
+                        <FormField
+                            control={form.control}
+                            name="amount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Số tiền thanh toán</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            placeholder="Nhập số tiền"
+                                            {...field}
+                                            onChange={(e) => field.onChange(Number(e.target.value))}
+                                            disabled
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Payment Method */}
+                        <FormField
+                            control={form.control}
+                            name="method"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Phương thức thanh toán</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn phương thức thanh toán" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="VNPAY_QR">
+                                                <div className="flex items-center gap-2">
+                                                    <QrCode className="h-4 w-4" />
+                                                    VNPay QR Code
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="VNPAY_ATM">
+                                                <div className="flex items-center gap-2">
+                                                    <CreditCard className="h-4 w-4" />
+                                                    VNPay ATM
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="VNPAY_BANK">
+                                                <div className="flex items-center gap-2">
+                                                    <CreditCard className="h-4 w-4" />
+                                                    VNPay Internet Banking
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="CASH">
+                                                <div className="flex items-center gap-2">
+                                                    <Banknote className="h-4 w-4" />
+                                                    Tiền mặt (thanh toán tại chỗ)
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Order Info */}
+                        <FormField
+                            control={form.control}
+                            name="orderInfo"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Thông tin đơn hàng</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Nhập thông tin đơn hàng" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Notes */}
+                        <FormField
+                            control={form.control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Ghi chú (tùy chọn)</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Nhập ghi chú nếu có"
+                                            className="resize-none"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Payment Method Info */}
+                        <div className="p-4 bg-muted rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                                {getMethodIcon(selectedMethod)}
+                                <span className="font-medium">{getPaymentMethodName(selectedMethod)}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {selectedMethod === "VNPAY_QR" && "Quét mã QR bằng ứng dụng ngân hàng để thanh toán nhanh chóng."}
+                                {selectedMethod === "VNPAY_ATM" && "Thanh toán tại máy ATM của các ngân hàng liên kết VNPay."}
+                                {selectedMethod === "VNPAY_BANK" && "Thanh toán trực tuyến qua Internet Banking."}
+                                {selectedMethod === "CASH" && "Thanh toán bằng tiền mặt tại phòng quản lý ký túc xá."}
+                            </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-4 pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onCancel}
+                                disabled={isLoading}
+                                className="flex-1 cursor-pointer"
+                            >
+                                Hủy
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="flex-1 cursor-pointer"
+                            >
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {selectedMethod === "CASH" ? "Xác nhận thanh toán" : "Thanh toán ngay"}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </>
+        )
+    }
+
     return (
         <Card className="w-full max-w-2xl mx-auto">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
-                    Thanh toán ký túc xá
+                    {type === "registration" ? "Thanh toán ký túc xá" : "Thanh toán hóa đơn điện nước"}
                 </CardTitle>
                 <CardDescription>
-                    Học kỳ {semester} - Số tiền: <Badge variant="secondary">{formatAmount(roomPrice)}</Badge>
+                    {description} - Số tiền: <Badge variant="secondary">{formatAmount(amount)}</Badge>
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -224,14 +379,14 @@ export function PaymentForm({ registrationId, roomPrice, semester, onSuccess, on
                                 variant="outline"
                                 onClick={onCancel}
                                 disabled={isLoading}
-                                className="flex-1"
+                                className="flex-1 cursor-pointer"
                             >
                                 Hủy
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex-1"
+                                className="flex-1 cursor-pointer"
                             >
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {selectedMethod === "CASH" ? "Xác nhận thanh toán" : "Thanh toán ngay"}

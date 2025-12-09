@@ -10,11 +10,15 @@ import { PaymentMethod, PaymentStatus } from '@prisma/client'
 
 // Create Payment Schema
 export const createPaymentSchema = z.object({
-    registrationId: z.string().min(1, 'ID phiếu đăng ký là bắt buộc'),
+    registrationId: z.string().min(1, 'ID phiếu đăng ký là bắt buộc').optional(),
+    utilityBillId: z.string().min(1, 'ID hóa đơn điện nước là bắt buộc').optional(),
     amount: z.number().min(1000, 'Số tiền tối thiểu là 1,000 VNĐ').max(50000000, 'Số tiền tối đa là 50,000,000 VNĐ'),
     method: z.nativeEnum(PaymentMethod),
     orderInfo: z.string().min(1, 'Thông tin đơn hàng là bắt buộc').max(255, 'Thông tin đơn hàng không được vượt quá 255 ký tự'),
     notes: z.string().max(1000, 'Ghi chú không được vượt quá 1000 ký tự').optional(),
+}).refine((data) => data.registrationId || data.utilityBillId, {
+    message: 'Phải có ít nhất một trong hai: registrationId hoặc utilityBillId',
+    path: ['registrationId'], // This will show the error on registrationId field
 })
 
 // Update Payment Status Schema

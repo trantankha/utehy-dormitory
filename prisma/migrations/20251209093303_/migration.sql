@@ -147,6 +147,7 @@ CREATE TABLE "payments" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "registrationId" TEXT,
+    "utilityBillId" TEXT,
     "studentId" TEXT NOT NULL,
 
     CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
@@ -258,6 +259,9 @@ CREATE UNIQUE INDEX "payments_transactionId_key" ON "payments"("transactionId");
 CREATE UNIQUE INDEX "payments_registrationId_key" ON "payments"("registrationId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "payments_utilityBillId_key" ON "payments"("utilityBillId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "meter_readings_roomId_month_year_key" ON "meter_readings"("roomId", "month", "year");
 
 -- CreateIndex
@@ -283,6 +287,9 @@ ALTER TABLE "registrations" ADD CONSTRAINT "registrations_bedId_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_registrationId_fkey" FOREIGN KEY ("registrationId") REFERENCES "registrations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payments" ADD CONSTRAINT "payments_utilityBillId_fkey" FOREIGN KEY ("utilityBillId") REFERENCES "utility_bills"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;

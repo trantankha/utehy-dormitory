@@ -5,6 +5,8 @@ import { getAllRoomsAction } from "@/actions/admin"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
+import { paginate } from "@/lib/utils"
+import { Pagination } from "@/components/ui/pagination"
 import type { Room, Dormitory, Bed } from "@prisma/client"
 
 type RoomWithRelations = Room & {
@@ -15,6 +17,7 @@ type RoomWithRelations = Room & {
 export function RoomsManagement() {
   const [rooms, setRooms] = useState<RoomWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadRooms()
@@ -26,6 +29,7 @@ export function RoomsManagement() {
 
     if (result.success) {
       setRooms(result.data as RoomWithRelations[])
+      setCurrentPage(1) // Reset to first page when data changes
     }
 
     setIsLoading(false)
@@ -42,6 +46,12 @@ export function RoomsManagement() {
       default:
         return type
     }
+  }
+
+  const paginatedRooms = paginate(rooms, currentPage, 12)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
   if (isLoading) {
@@ -72,7 +82,7 @@ export function RoomsManagement() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rooms.map((room) => (
+        {paginatedRooms.data.map((room) => (
           <Card key={room.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -128,6 +138,12 @@ export function RoomsManagement() {
           </Card>
         ))}
       </div>
+
+      <Pagination
+        currentPage={paginatedRooms.currentPage}
+        totalPages={paginatedRooms.totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   )
 }

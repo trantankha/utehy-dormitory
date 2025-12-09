@@ -14,6 +14,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Plus, Calendar, Download, Upload, FileSpreadsheet } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { paginate } from "@/lib/utils"
+import { Pagination } from "@/components/ui/pagination"
 
 export function MeterReadingsManager() {
     const [readings, setReadings] = useState<any[]>([])
@@ -24,6 +26,7 @@ export function MeterReadingsManager() {
     const [error, setError] = useState<string | null>(null)
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+    const [currentPage, setCurrentPage] = useState(1)
 
     // Excel import/export states
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
@@ -48,7 +51,14 @@ export function MeterReadingsManager() {
     useEffect(() => {
         loadReadings()
         loadRooms()
+        setCurrentPage(1) // Reset to first page when month/year changes
     }, [selectedMonth, selectedYear])
+
+    // Pagination logic
+    const paginatedReadings = paginate(readings, currentPage, 10)
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page)
+    }
 
     const loadReadings = async () => {
         setIsLoading(true)
@@ -207,15 +217,15 @@ export function MeterReadingsManager() {
 
                     {/* Excel Actions */}
                     <div className="flex items-center space-x-2">
-                        <Button variant="outline" onClick={handleDownloadTemplate}>
+                        <Button className="cursor-pointer" variant="outline" onClick={handleDownloadTemplate}>
                             <FileSpreadsheet className="mr-2 h-4 w-4" />
                             Mẫu Excel
                         </Button>
 
                         <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="outline">
-                                    <Upload className="mr-2 h-4 w-4" />
+                                <Button variant="outline" className="cursor-pointer">
+                                    <Download className="mr-2 h-4 w-4" />
                                     Nhập Excel
                                 </Button>
                             </DialogTrigger>
@@ -236,7 +246,7 @@ export function MeterReadingsManager() {
                                             accept=".xlsx,.xls"
                                             onChange={handleImportExcel}
                                             disabled={isImporting}
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="flex cursor-pointer h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                         />
                                     </div>
 
@@ -271,15 +281,15 @@ export function MeterReadingsManager() {
                             </DialogContent>
                         </Dialog>
 
-                        <Button variant="outline" onClick={handleExportExcel}>
-                            <Download className="mr-2 h-4 w-4" />
+                        <Button className="cursor-pointer" variant="outline" onClick={handleExportExcel}>
+                            <Upload className="mr-2 h-4 w-4" />
                             Xuất Excel
                         </Button>
                     </div>
 
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button>
+                            <Button className="cursor-pointer">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Ghi chỉ số mới
                             </Button>
@@ -403,10 +413,10 @@ export function MeterReadingsManager() {
                                 </div>
 
                                 <div className="flex justify-end space-x-2 pt-4">
-                                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+                                    <Button className="cursor-pointer" type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                                         Hủy
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting}>
+                                    <Button className="cursor-pointer" type="submit" disabled={isSubmitting}>
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -440,44 +450,52 @@ export function MeterReadingsManager() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {readings.map((reading) => (
-                        <Card key={reading.id}>
-                            <CardHeader>
-                                <CardTitle className="text-lg">
-                                    {reading.room.dormitory.name} - Phòng {reading.room.roomNumber}
-                                </CardTitle>
-                                <CardDescription>
-                                    Tháng {reading.month}/{reading.year}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Điện:</span>
-                                        <span className="font-medium">{reading.electricityReading} kWh</span>
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {paginatedReadings.data.map((reading) => (
+                            <Card key={reading.id}>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">
+                                        {reading.room.dormitory.name} - Phòng {reading.room.roomNumber}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Tháng {reading.month}/{reading.year}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Điện:</span>
+                                            <span className="font-medium">{reading.electricityReading} kWh</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Nước:</span>
+                                            <span className="font-medium">{reading.waterReading} m³</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Nước:</span>
-                                        <span className="font-medium">{reading.waterReading} m³</span>
-                                    </div>
-                                </div>
 
-                                <div className="pt-2 border-t">
-                                    <p className="text-sm text-gray-600">
-                                        Ghi nhận: {new Date(reading.recordedAt).toLocaleDateString("vi-VN")}
-                                    </p>
-                                </div>
-
-                                {reading.notes && (
                                     <div className="pt-2 border-t">
-                                        <p className="text-sm text-gray-600">{reading.notes}</p>
+                                        <p className="text-sm text-gray-600">
+                                            Ghi nhận: {new Date(reading.recordedAt).toLocaleDateString("vi-VN")}
+                                        </p>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+
+                                    {reading.notes && (
+                                        <div className="pt-2 border-t">
+                                            <p className="text-sm text-gray-600">{reading.notes}</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    <Pagination
+                        currentPage={paginatedReadings.currentPage}
+                        totalPages={paginatedReadings.totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </>
             )}
         </div>
     )

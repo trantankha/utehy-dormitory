@@ -84,7 +84,7 @@ export function UtilityRatesManager() {
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="cursor-pointer">
                             <Plus className="mr-2 h-4 w-4" />
                             Thêm biểu giá mới
                         </Button>
@@ -157,10 +157,10 @@ export function UtilityRatesManager() {
                             </div>
 
                             <div className="flex justify-end space-x-2 pt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+                                <Button type="button" variant="outline" className="cursor-pointer" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                                     Hủy
                                 </Button>
-                                <Button type="submit" disabled={isSubmitting}>
+                                <Button type="submit" disabled={isSubmitting} className="cursor-pointer">
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

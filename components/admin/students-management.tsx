@@ -6,7 +6,9 @@ import { exportStudentsExcelAction } from "@/actions/excel"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Download } from "lucide-react"
+import { Loader2, Upload } from "lucide-react"
+import { paginate } from "@/lib/utils"
+import { Pagination } from "@/components/ui/pagination"
 import type { Student, User, Registration } from "@prisma/client"
 
 type StudentWithRelations = Student & {
@@ -17,6 +19,7 @@ type StudentWithRelations = Student & {
 export function StudentsManagement() {
   const [students, setStudents] = useState<StudentWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     loadStudents()
@@ -28,9 +31,16 @@ export function StudentsManagement() {
 
     if (result.success) {
       setStudents(result.data as StudentWithRelations[])
+      setCurrentPage(1) // Reset to first page when data changes
     }
 
     setIsLoading(false)
+  }
+
+  const paginatedStudents = paginate(students, currentPage, 10)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
   // Excel export function
@@ -77,14 +87,14 @@ export function StudentsManagement() {
           <CardTitle className="text-lg px-3">Tổng số sinh viên: {students.length}</CardTitle>
         </Card>
 
-        <Button onClick={handleExportExcel}>
-          <Download className="mr-2 h-4 w-4" />
+        <Button className="cursor-pointer" onClick={handleExportExcel}>
+          <Upload className="mr-2 h-4 w-4" />
           Xuất Excel
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {students.map((student) => (
+        {paginatedStudents.data.map((student) => (
           <Card key={student.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -132,6 +142,12 @@ export function StudentsManagement() {
           </Card>
         ))}
       </div>
+
+      <Pagination
+        currentPage={paginatedStudents.currentPage}
+        totalPages={paginatedStudents.totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   )
 }

@@ -75,7 +75,7 @@ export function RoomList() {
               <select
                 value={selectedDormitory}
                 onChange={(e) => setSelectedDormitory(e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer"
               >
                 <option value="">Tất cả</option>
                 {dormitories.map((dorm) => (
@@ -145,7 +145,7 @@ export function RoomList() {
 
                 <Button
                   onClick={() => handleRegister(room)}
-                  className="w-full"
+                  className="w-full cursor-pointer"
                   disabled={room.occupied >= room.capacity}
                 >
                   {room.occupied >= room.capacity ? "Đã đầy" : "Đăng ký"}

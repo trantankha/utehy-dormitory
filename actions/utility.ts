@@ -27,7 +27,7 @@ export async function getCurrentUtilityRatesAction() {
 
         return {
             success: true,
-            data: rates.map(rate => ({
+            data: rates.map((rate: any) => ({
                 ...rate,
                 electricityRate: Number(rate.electricityRate),
                 waterRate: Number(rate.waterRate),
@@ -123,7 +123,7 @@ export async function getMeterReadingsAction(month: number, year: number) {
 
         return {
             success: true,
-            data: readings.map(reading => ({
+            data: readings.map((reading: any) => ({
                 ...reading,
                 room: {
                     ...reading.room,
@@ -403,7 +403,7 @@ export async function getUtilityBillsAction(month: number, year: number) {
 
         return {
             success: true,
-            data: bills.map(bill => ({
+            data: bills.map((bill: any) => ({
                 ...bill,
                 electricityAmount: Number(bill.electricityAmount),
                 waterAmount: Number(bill.waterAmount),
@@ -502,6 +502,7 @@ export async function getStudentUtilityBillsAction() {
         })
 
         if (!student) {
+            console.log("Student not found for user:", user.id)
             return {
                 success: false,
                 error: "Không tìm thấy thông tin sinh viên",
@@ -509,20 +510,20 @@ export async function getStudentUtilityBillsAction() {
             }
         }
 
-        // Lấy phiếu đăng ký đang hoạt động
-        const activeRegistration = await prisma.registration.findFirst({
+        // Lấy phiếu đăng ký gần nhất của sinh viên (không lọc theo status)
+        const latestRegistration = await prisma.registration.findFirst({
             where: {
                 studentId: student.id,
-                status: {
-                    in: ["DA_XAC_NHAN", "DA_THANH_TOAN"],
-                },
             },
             include: {
                 room: true,
             },
+            orderBy: {
+                createdAt: "desc",
+            },
         })
 
-        if (!activeRegistration) {
+        if (!latestRegistration) {
             return {
                 success: true,
                 data: [],
@@ -532,7 +533,14 @@ export async function getStudentUtilityBillsAction() {
         // Lấy hóa đơn của phòng
         const bills = await prisma.utilityBill.findMany({
             where: {
-                roomId: activeRegistration.roomId,
+                roomId: latestRegistration.roomId,
+            },
+            include: {
+                room: {
+                    include: {
+                        dormitory: true,
+                    },
+                },
             },
             orderBy: [
                 { year: "desc" },
@@ -543,11 +551,16 @@ export async function getStudentUtilityBillsAction() {
 
         return {
             success: true,
-            data: bills.map(bill => ({
+            data: bills.map((bill: any) => ({
                 ...bill,
                 electricityAmount: Number(bill.electricityAmount),
                 waterAmount: Number(bill.waterAmount),
                 totalAmount: Number(bill.totalAmount),
+                room: {
+                    ...bill.room,
+                    pricePerSemester: Number(bill.room.pricePerSemester),
+                    dormitory: { ...bill.room.dormitory },
+                },
             })),
         }
     } catch (error) {

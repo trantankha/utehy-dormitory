@@ -248,8 +248,10 @@ model Payment {
   updatedAt     DateTime      @updatedAt
 
   // Relations
-  registrationId String?       @unique // Liên kết với phiếu đăng ký
+  registrationId String?       @unique // Liên kết với phiếu đăng ký (optional)
   registration   Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  utilityBillId  String?       @unique // Liên kết với hóa đơn điện nước (optional)
+  utilityBill    UtilityBill?  @relation(fields: [utilityBillId], references: [id], onDelete: SetNull)
   studentId      String // Sinh viên thực hiện thanh toán
   student        Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -320,6 +322,7 @@ model UtilityBill {
 
   // Relations
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  payment Payment? // Liên kết với thanh toán (optional)
 
   @@unique([roomId, month, year]) // Mỗi phòng chỉ có 1 hóa đơn/tháng
   @@map("utility_bills")

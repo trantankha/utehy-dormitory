@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Calculator, CheckCircle, Clock, AlertTriangle, XCircle, Download, Mail } from "lucide-react"
+import { Loader2, Calculator, CheckCircle, Clock, AlertTriangle, XCircle, Upload } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -162,14 +162,14 @@ export function UtilityBillsManager() {
                     </div>
 
                     {/* Excel Export Button */}
-                    <Button variant="outline" onClick={handleExportExcel}>
-                        <Download className="mr-2 h-4 w-4" />
+                    <Button className="cursor-pointer" variant="outline" onClick={handleExportExcel}>
+                        <Upload className="mr-2 h-4 w-4" />
                         Xuất Excel
                     </Button>
 
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button disabled={isCalculating}>
+                            <Button className="cursor-pointer" disabled={isCalculating}>
                                 <Calculator className="mr-2 h-4 w-4" />
                                 Tính tiền tháng này
                             </Button>
@@ -185,10 +185,10 @@ export function UtilityBillsManager() {
                             </DialogHeader>
 
                             <div className="flex justify-end space-x-2 pt-4">
-                                <Button variant="outline" onClick={() => { }}>
+                                {/* <Button className="cursor-pointer" variant="outline" onClick={() => { }}>
                                     Hủy
-                                </Button>
-                                <Button onClick={handleCalculateBills} disabled={isCalculating}>
+                                </Button> */}
+                                <Button className="cursor-pointer" onClick={handleCalculateBills} disabled={isCalculating}>
                                     {isCalculating ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -278,7 +278,7 @@ export function UtilityBillsManager() {
                                         <Button
                                             size="sm"
                                             onClick={() => handleUpdateStatus(bill.id, "PAID")}
-                                            className="flex-1"
+                                            className="flex-1 cursor-pointer"
                                         >
                                             <CheckCircle className="w-3 h-3 mr-1" />
                                             Đã thanh toán
@@ -287,6 +287,7 @@ export function UtilityBillsManager() {
                                             size="sm"
                                             variant="outline"
                                             onClick={() => handleUpdateStatus(bill.id, "CANCELLED")}
+                                            className="cursor-pointer"
                                         >
                                             <XCircle className="w-3 h-3 mr-1" />
                                             Hủy

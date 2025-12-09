@@ -54,8 +54,8 @@ export function exportMeterReadingsToExcel(
         'Mã phòng': reading.room.roomNumber,
         'Tên phòng': reading.room.roomNumber,
         'Ký túc xá': reading.room.dormitory.name,
-        'Chỉ số điện': formatCurrency(Number(reading.electricityReading)),
-        'Chỉ số nước': formatCurrency(Number(reading.waterReading)),
+        'Chỉ số điện': reading.electricityReading.toString(),
+        'Chỉ số nước': reading.waterReading.toString(),
         'Ghi chú': reading.notes || '',
     }))
 
@@ -69,7 +69,7 @@ export function exportMeterReadingsToExcel(
         { wch: 12 }, // Ký túc xá
         { wch: 15 }, // Chỉ số điện
         { wch: 15 }, // Chỉ số nước
-        { wch: 20 }, // Ghi chú
+        { wch: 25 }, // Ghi chú
     ]
     ws['!cols'] = colWidths
 
@@ -103,9 +103,9 @@ export function exportUtilityBillsToExcel(
     // Set column widths
     const colWidths = [
         { wch: 12 }, // Mã phòng
-        { wch: 12 }, // Ký túc xá
-        { wch: 12 }, // Tiêu thụ điện
-        { wch: 12 }, // Tiêu thụ nước
+        { wch: 10 }, // Ký túc xá
+        { wch: 15 }, // Tiêu thụ điện
+        { wch: 15 }, // Tiêu thụ nước
         { wch: 15 }, // Tiền điện
         { wch: 15 }, // Tiền nước
         { wch: 17 }, // Tổng tiền

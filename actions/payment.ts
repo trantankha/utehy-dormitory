@@ -71,7 +71,7 @@ export async function createPaymentAction(data: CreatePaymentInput) {
         }
 
         // Generate order ID (unique payment reference)
-        const orderId = `PAY_${Date.now()}_${validatedData.registrationId.slice(-8)}`
+        const orderId = `PAY_${Date.now()}_${validatedData.registrationId?.slice(-8)}`
 
         // Create payment record
         const payment = await prisma.payment.create({
@@ -152,12 +152,13 @@ export async function verifyPaymentReturnAction(searchParams: Record<string, str
         const payment = await prisma.payment.findFirst({
             where: {
                 orderInfo: {
-                    contains: verification.orderId.split('_').pop() || '', // Extract registration ID from order ID
+                    contains: verification.orderId.split('_').pop() || '', // Extract ID from order ID
                 },
                 status: 'PENDING',
             },
             include: {
                 registration: true,
+                utilityBill: true,
                 student: {
                     include: {
                         user: true,
@@ -196,15 +197,28 @@ export async function verifyPaymentReturnAction(searchParams: Record<string, str
             data: updateData,
         })
 
-        // If payment is successful, update registration status
+        // If payment is successful, update related entity status
         if (verification.status === 'COMPLETED') {
-            await prisma.registration.update({
-                where: { id: payment.registrationId! },
-                data: {
-                    status: 'DA_THANH_TOAN',
-                    paidAt: new Date(),
-                },
-            })
+            if (payment.registrationId) {
+                // Update registration status
+                await prisma.registration.update({
+                    where: { id: payment.registrationId },
+                    data: {
+                        status: 'DA_THANH_TOAN',
+                        paidAt: new Date(),
+                    },
+                })
+            } else if (payment.utilityBillId) {
+                // Update utility bill status
+                await prisma.utilityBill.update({
+                    where: { id: payment.utilityBillId },
+                    data: {
+                        status: 'PAID',
+                        paidAt: new Date(),
+                        paidBy: payment.student.user.email,
+                    },
+                })
+            }
         }
 
         revalidatePath("/student/my-registrations")
@@ -253,6 +267,15 @@ export async function verifyPaymentIPNAction(searchParams: Record<string, string
                 },
                 status: 'PENDING',
             },
+            include: {
+                registration: true,
+                utilityBill: true,
+                student: {
+                    include: {
+                        user: true,
+                    },
+                },
+            },
         })
 
         if (!payment) {
@@ -284,15 +307,28 @@ export async function verifyPaymentIPNAction(searchParams: Record<string, string
             data: updateData,
         })
 
-        // If payment is successful, update registration status
+        // If payment is successful, update related entity status
         if (verification.status === 'COMPLETED') {
-            await prisma.registration.update({
-                where: { id: payment.registrationId! },
-                data: {
-                    status: 'DA_THANH_TOAN',
-                    paidAt: new Date(),
-                },
-            })
+            if (payment.registrationId) {
+                // Update registration status
+                await prisma.registration.update({
+                    where: { id: payment.registrationId },
+                    data: {
+                        status: 'DA_THANH_TOAN',
+                        paidAt: new Date(),
+                    },
+                })
+            } else if (payment.utilityBillId) {
+                // Update utility bill status
+                await prisma.utilityBill.update({
+                    where: { id: payment.utilityBillId },
+                    data: {
+                        status: 'PAID',
+                        paidAt: new Date(),
+                        paidBy: payment.student.user.email,
+                    },
+                })
+            }
         }
 
         return {
@@ -357,6 +393,15 @@ export async function getPaymentHistoryAction(filters?: {
                         },
                     },
                 },
+                utilityBill: {
+                    include: {
+                        room: {
+                            include: {
+                                dormitory: true,
+                            },
+                        },
+                    },
+                },
                 student: {
                     include: {
                         user: {
@@ -413,6 +458,12 @@ export async function updatePaymentStatusAction(paymentId: string, data: UpdateP
             where: { id: paymentId },
             include: {
                 registration: true,
+                utilityBill: true,
+                student: {
+                    include: {
+                        user: true,
+                    },
+                },
             },
         })
 
@@ -446,15 +497,28 @@ export async function updatePaymentStatusAction(paymentId: string, data: UpdateP
             data: updateData,
         })
 
-        // If payment is completed, update registration status
-        if (validatedData.status === 'COMPLETED' && payment.registration) {
-            await prisma.registration.update({
-                where: { id: payment.registration.id },
-                data: {
-                    status: 'DA_THANH_TOAN',
-                    paidAt: new Date(),
-                },
-            })
+        // If payment is completed, update related entity status
+        if (validatedData.status === 'COMPLETED') {
+            if (payment.registration) {
+                // Update registration status
+                await prisma.registration.update({
+                    where: { id: payment.registration.id },
+                    data: {
+                        status: 'DA_THANH_TOAN',
+                        paidAt: new Date(),
+                    },
+                })
+            } else if (payment.utilityBill) {
+                // Update utility bill status
+                await prisma.utilityBill.update({
+                    where: { id: payment.utilityBill.id },
+                    data: {
+                        status: 'PAID',
+                        paidAt: new Date(),
+                        paidBy: payment.student.user.email,
+                    },
+                })
+            }
         }
 
         revalidatePath("/admin/payments")
@@ -485,6 +549,7 @@ export async function refundPaymentAction(paymentId: string, data: RefundPayment
             where: { id: paymentId },
             include: {
                 registration: true,
+                utilityBill: true,
                 student: {
                     include: {
                         user: true,
@@ -546,6 +611,144 @@ export async function refundPaymentAction(paymentId: string, data: RefundPayment
 }
 
 // ============================================
+// CREATE UTILITY BILL PAYMENT (Student/Admin)
+// ============================================
+
+export async function createUtilityBillPaymentAction(data: CreatePaymentInput) {
+    try {
+        // Require authentication (can be student or admin)
+        const user = await requireAuth()
+
+        // Validate input
+        const validatedData = createPaymentSchema.parse(data)
+
+        // Check if utility bill exists
+        const utilityBill = await prisma.utilityBill.findUnique({
+            where: { id: validatedData.utilityBillId! },
+            include: {
+                room: {
+                    include: {
+                        dormitory: true,
+                        registrations: {
+                            where: {
+                                status: 'DA_THANH_TOAN', // Only active registrations
+                            },
+                            include: {
+                                student: true,
+                            },
+                        },
+                    },
+                },
+            },
+        })
+
+        if (!utilityBill) {
+            return {
+                success: false,
+                error: "Không tìm thấy hóa đơn điện nước",
+            }
+        }
+
+        // Check if bill is in correct status for payment
+        if (utilityBill.status !== 'PENDING') {
+            return {
+                success: false,
+                error: "Hóa đơn đã được thanh toán hoặc không thể thanh toán",
+            }
+        }
+
+        // Check if payment already exists for this utility bill
+        const existingPayment = await prisma.payment.findUnique({
+            where: { utilityBillId: validatedData.utilityBillId },
+        })
+
+        if (existingPayment) {
+            return {
+                success: false,
+                error: "Hóa đơn đã có thanh toán",
+            }
+        }
+
+        // Determine student ID - for utility bills, we need to find the student(s) in the room
+        // For simplicity, we'll use the first active student in the room
+        const activeRegistration = utilityBill.room.registrations[0]
+        if (!activeRegistration) {
+            return {
+                success: false,
+                error: "Không tìm thấy sinh viên đang thuê phòng này",
+            }
+        }
+
+        // Check ownership if user is student
+        if (user.role === 'STUDENT' && activeRegistration.studentId !== user.studentId) {
+            return {
+                success: false,
+                error: "Bạn không có quyền thanh toán cho hóa đơn này",
+            }
+        }
+
+        // Generate order ID (unique payment reference)
+        const orderId = `UTIL_${Date.now()}_${validatedData.utilityBillId!.slice(-8)}`
+
+        // Create payment record
+        const payment = await prisma.payment.create({
+            data: {
+                utilityBillId: validatedData.utilityBillId,
+                studentId: activeRegistration.studentId,
+                amount: validatedData.amount,
+                method: validatedData.method,
+                orderInfo: validatedData.orderInfo,
+                notes: validatedData.notes,
+                status: 'PENDING',
+            },
+        })
+
+        // Generate VNPay URL if method is VNPay
+        let paymentUrl: string | undefined
+        if (validatedData.method !== 'CASH') {
+            paymentUrl = generateVNPayUrl({
+                amount: validatedData.amount,
+                orderId,
+                orderInfo: validatedData.orderInfo,
+                ipAddr: '127.0.0.1', // In production, get from request
+                method: validatedData.method,
+            })
+        }
+
+        // Update payment with payment URL
+        if (paymentUrl) {
+            await prisma.payment.update({
+                where: { id: payment.id },
+                data: { paymentUrl },
+            })
+        }
+
+        revalidatePath("/student/utility-bills")
+        revalidatePath("/admin/utility-bills")
+
+        return {
+            success: true,
+            data: {
+                payment: {
+                    ...payment,
+                    amount: Number(payment.amount),
+                    createdAt: payment.createdAt.toISOString(),
+                    updatedAt: payment.updatedAt.toISOString(),
+                },
+                paymentUrl,
+                orderId,
+            },
+        }
+    } catch (error) {
+        console.error("Create utility bill payment error:", error)
+        return {
+            success: false,
+            error: "Đã xảy ra lỗi khi tạo thanh toán hóa đơn điện nước",
+        }
+    }
+}
+
+// ============================================
 // GET STUDENT PAYMENTS (Student only)
 // ============================================
 
@@ -559,6 +762,15 @@ export async function getStudentPaymentsAction() {
             },
             include: {
                 registration: {
+                    include: {
+                        room: {
+                            include: {
+                                dormitory: true,
+                            },
+                        },
+                    },
+                },
+                utilityBill: {
                     include: {
                         room: {
                             include: {

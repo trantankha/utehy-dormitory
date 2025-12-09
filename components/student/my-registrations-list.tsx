@@ -209,6 +209,7 @@ export function MyRegistrationsList() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowExtensionDialog(showExtensionDialog === registration.id ? null : registration.id)}
+                    className="cursor-pointer"
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     Gia hạn hợp đồng
@@ -221,6 +222,7 @@ export function MyRegistrationsList() {
                     variant="default"
                     size="sm"
                     onClick={() => setShowPaymentForm(showPaymentForm === registration.id ? null : registration.id)}
+                    className="cursor-pointer"
                   >
                     <CreditCard className="mr-2 h-4 w-4" />
                     {showPaymentForm === registration.id ? "Hủy thanh toán" : "Thanh toán"}
@@ -235,9 +237,10 @@ export function MyRegistrationsList() {
                     <DialogTitle>Thanh toán ký túc xá</DialogTitle>
                   </DialogHeader>
                   <PaymentForm
-                    registrationId={registration.id}
-                    roomPrice={Number(registration.room.pricePerSemester)}
-                    semester={registration.semester}
+                    type="registration"
+                    entityId={registration.id}
+                    amount={Number(registration.room.pricePerSemester)}
+                    description={`Thanh toán ký túc xá học kỳ ${registration.semester.replace(/_/g, " ")}`}
                     onSuccess={() => {
                       setShowPaymentForm(null)
                       loadRegistrations()

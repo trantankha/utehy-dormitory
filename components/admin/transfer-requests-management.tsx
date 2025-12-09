@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, CheckCircle, XCircle, Clock } from "lucide-react"
+import { paginate } from "@/lib/utils"
+import { Pagination } from "@/components/ui/pagination"
 import { UpdateTransferDialog } from "./update-transfer-dialog"
 import type { TransferRequest, Student, Room, Dormitory, Bed } from "@prisma/client"
 
@@ -29,6 +31,7 @@ export function TransferRequestsManagement() {
     const [selectedRequest, setSelectedRequest] = useState<TransferRequestWithRelations | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [statusFilter, setStatusFilter] = useState<string>("")
+    const [currentPage, setCurrentPage] = useState(1)
 
     useEffect(() => {
         loadTransferRequests()
@@ -40,6 +43,7 @@ export function TransferRequestsManagement() {
         } else {
             setFilteredRequests(transferRequests)
         }
+        setCurrentPage(1) // Reset to first page when filter changes
     }, [statusFilter, transferRequests])
 
     const loadTransferRequests = async () => {
@@ -113,6 +117,12 @@ export function TransferRequestsManagement() {
         }
     }
 
+    // Pagination logic
+    const paginatedRequests = paginate(filteredRequests, currentPage, 10)
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page)
+    }
+
     if (isLoading) {
         return (
             <div className="text-center py-12">
@@ -174,7 +184,7 @@ export function TransferRequestsManagement() {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
-                    {filteredRequests.map((request) => (
+                    {paginatedRequests.data.map((request) => (
                         <Card key={request.id}>
                             <CardHeader>
                                 <div className="flex items-start justify-between">
@@ -299,6 +309,12 @@ export function TransferRequestsManagement() {
                     ))}
                 </div>
             )}
+
+            <Pagination
+                currentPage={paginatedRequests.currentPage}
+                totalPages={paginatedRequests.totalPages}
+                onPageChange={handlePageChange}
+            />
 
             {/* Update Status Dialog */}
             {selectedRequest && (

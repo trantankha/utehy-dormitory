@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Calendar } from "lucide-react"
+import { paginate } from "@/lib/utils"
+import { Pagination } from "@/components/ui/pagination"
 import { UpdateStatusDialog } from "./update-status-dialog"
 import type { Registration, Student, Room, Dormitory, Bed } from "@prisma/client"
 
@@ -24,6 +26,7 @@ export function RegistrationsManagement() {
   const [selectedRegistration, setSelectedRegistration] = useState<RegistrationWithRelations | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("")
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     loadRegistrations()
@@ -35,6 +38,7 @@ export function RegistrationsManagement() {
     } else {
       setFilteredRegistrations(registrations)
     }
+    setCurrentPage(1) // Reset to first page when filter changes
   }, [statusFilter, registrations])
 
   const loadRegistrations = async () => {
@@ -69,6 +73,12 @@ export function RegistrationsManagement() {
       default:
         return <Badge>{status}</Badge>
     }
+  }
+
+  const paginatedRegistrations = paginate(filteredRegistrations, currentPage, 10)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
   if (isLoading) {
@@ -132,7 +142,7 @@ export function RegistrationsManagement() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {filteredRegistrations.map((registration) => (
+          {paginatedRegistrations.data.map((registration) => (
             <Card key={registration.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -206,9 +216,9 @@ export function RegistrationsManagement() {
                 )}
 
                 {/* Actions */}
-                {registration.status !== "DA_HUY" && registration.status !== "TU_CHOI" && (
+                {registration.status !== "DA_HUY" && registration.status !== "TU_CHOI" && registration.status !== "DA_THANH_TOAN" && (
                   <div className="flex justify-end pt-2 border-t">
-                    <Button size="sm" onClick={() => handleUpdateStatus(registration)}>
+                    <Button className="cursor-pointer" size="sm" onClick={() => handleUpdateStatus(registration)}>
                       Cập nhật trạng thái
                     </Button>
                   </div>
@@ -218,6 +228,12 @@ export function RegistrationsManagement() {
           ))}
         </div>
       )}
+
+      <Pagination
+        currentPage={paginatedRegistrations.currentPage}
+        totalPages={paginatedRegistrations.totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Update Status Dialog */}
       {selectedRegistration && (
