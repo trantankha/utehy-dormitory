@@ -13,7 +13,7 @@ export const registerSchema = z
     confirmPassword: z.string(),
     studentCode: z.string().min(1, "Mã sinh viên là bắt buộc"),
     fullName: z.string().min(1, "Họ tên là bắt buộc"),
-    gender: z.enum(["Nam", "Nữ"], { required_error: "Giới tính là bắt buộc" }),
+    gender: z.enum(["Nam", "Nữ"], { message: "Giới tính là bắt buộc" }),
     dateOfBirth: z.string().min(1, "Ngày sinh là bắt buộc"),
     phoneNumber: z.string().regex(/^[0-9]{10}$/, "Số điện thoại phải có 10 chữ số"),
     major: z.string().min(1, "Ngành học là bắt buộc"),

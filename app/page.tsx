@@ -23,7 +23,7 @@ export default async function HomePage() {
         <div className="space-y-4">
           <h1 className="text-5xl font-bold text-gray-900">Hệ thống Đăng ký Ký túc xá</h1>
           <p className="text-2xl text-gray-700">Trường Đại học Sư phạm Kỹ thuật Hưng Yên</p>
-          <p className="text-lg text-gray-600">UTEHY Dormitory Management System</p>
+          {/* <p className="text-lg text-gray-600">UTEHY Dormitory Management System</p> */}
         </div>
 
         {/* Features */}

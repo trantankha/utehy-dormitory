@@ -57,7 +57,7 @@ export default async function AdminDashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Tổng phòng</CardTitle>
+            <CardTitle className="text-lg">Số lượng phòng</CardTitle>
             <CardDescription>Đang hoạt động</CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,7 +118,7 @@ export default async function AdminDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Thống kê yêu cầu chuyển phòng</CardTitle>
-          <CardDescription>Tình trạng các yêu cầu chuyển phòng</CardDescription>
+          <CardDescription>Tình trạng chuyển phòng</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

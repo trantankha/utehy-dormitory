@@ -222,11 +222,19 @@ export async function getDashboardStatsAction() {
 // GET ALL STUDENTS (Admin only)
 // ============================================
 
-export async function getAllStudentsAction() {
+export async function getAllStudentsAction(search?: string) {
   try {
     await requireAuth(["ADMIN"])
 
     const students = await prisma.student.findMany({
+      where: search ? {
+        OR: [
+          { fullName: { contains: search, mode: "insensitive" } },
+          { studentCode: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { user: { email: { contains: search, mode: "insensitive" } } },
+        ],
+      } : {},
       include: {
         user: {
           select: {
@@ -257,6 +265,62 @@ export async function getAllStudentsAction() {
       success: false,
       error: "Đã xảy ra lỗi khi lấy danh sách sinh viên",
       data: [],
+    }
+  }
+}
+
+// ============================================
+// DELETE STUDENT (Admin only)
+// ============================================
+
+export async function deleteStudentAction(studentId: string) {
+  try {
+    await requireAuth(["ADMIN"])
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        registrations: {
+          where: {
+            status: {
+              in: ["CHO_XAC_NHAN", "DA_XAC_NHAN", "DA_THANH_TOAN"],
+            },
+          },
+        },
+      },
+    })
+
+    if (!student) {
+      return {
+        success: false,
+        error: "Không tìm thấy sinh viên",
+      }
+    }
+
+    // Check if student has active registrations
+    if (student.registrations.length > 0) {
+      return {
+        success: false,
+        error: "Không thể xóa sinh viên có phiếu đăng ký đang hoạt động",
+      }
+    }
+
+    // Delete student (cascade will delete user)
+    await prisma.student.delete({
+      where: { id: studentId },
+    })
+
+    revalidatePath("/admin/students")
+
+    return {
+      success: true,
+    }
+  } catch (error) {
+    console.error("Delete student error:", error)
+    return {
+      success: false,
+      error: "Đã xảy ra lỗi khi xóa sinh viên",
     }
   }
 }

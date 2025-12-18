@@ -74,7 +74,10 @@ export async function createSession(user: SessionUser): Promise<void> {
 // Xóa session
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies()
-  cookieStore.delete("session")
+  cookieStore.delete({
+    name: "session",
+    path: "/",
+  })
 }
 
 export const getSession = getCurrentUser

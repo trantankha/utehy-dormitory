@@ -112,7 +112,7 @@ export function RoomRegistrationDialog({ room, isOpen, onClose, onSuccess }: Roo
               id="semester"
               {...register("semester")}
               disabled={isLoading}
-              className="flex h-10 w-full rounded-md border border-input bg-background
+              className="flex h-10 w-full rounded-md border border-input bg-background cursor-pointer
                px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm
                 file:font-medium placeholder:text-muted-foreground focus-visible:outline-none 
                 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
@@ -129,21 +129,26 @@ export function RoomRegistrationDialog({ room, isOpen, onClose, onSuccess }: Roo
           </div>
 
           {/* Bed Selection */}
-          {room.beds.length > 0 && (
+          {room.beds.filter(bed => bed.status === "AVAILABLE").length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="bedId">Chọn giường (tùy chọn)</Label>
               <select
                 id="bedId"
                 {...register("bedId")}
                 disabled={isLoading}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm 
+                ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium 
+                placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 cursor-pointer
+                focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Chọn sau</option>
-                {room.beds.map((bed) => (
-                  <option key={bed.id} value={bed.id}>
-                    Giường số {bed.bedNumber}
-                  </option>
-                ))}
+                {room.beds
+                  .filter(bed => bed.status === "AVAILABLE")
+                  .map((bed) => (
+                    <option key={bed.id} value={bed.id}>
+                      Giường số {bed.bedNumber} - Trống
+                    </option>
+                  ))}
               </select>
               <p className="text-xs text-gray-500">Bạn có thể chọn giường cụ thể hoặc để quản lý phân bổ sau</p>
             </div>
@@ -164,10 +169,10 @@ export function RoomRegistrationDialog({ room, isOpen, onClose, onSuccess }: Roo
 
           {/* Actions */}
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" className="cursor-pointer" onClick={onClose} disabled={isLoading}>
               Hủy
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="cursor-pointer">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

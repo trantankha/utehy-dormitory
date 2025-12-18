@@ -34,11 +34,7 @@ export async function getAvailableRoomsAction(filters?: {
       },
       include: {
         dormitory: true,
-        beds: {
-          where: {
-            status: "AVAILABLE",
-          },
-        },
+        beds: true,
       },
       orderBy: [{ dormitory: { name: "asc" } }, { roomNumber: "asc" }],
     })

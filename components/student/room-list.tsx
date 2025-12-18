@@ -139,7 +139,7 @@ export function RoomList() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Giường trống:</span>
-                    <span className="font-medium">{room.beds.length} giường</span>
+                    <span className="font-medium">{room.capacity - room.occupied} giường</span>
                   </div>
                 </div>
 

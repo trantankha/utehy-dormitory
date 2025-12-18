@@ -43,7 +43,15 @@ export async function loginAction(data: LoginInput) {
       }
     }
 
-    // 4. Create session
+    // 4. Check if user is STUDENT but student record doesn't exist (account was deleted)
+    if (user.role === "STUDENT" && !user.student) {
+      return {
+        success: false,
+        error: "Tài khoản sinh viên này đã bị xóa. Vui lòng liên hệ quản trị viên.",
+      }
+    }
+
+    // 5. Create session
     await createSession({
       id: user.id,
       email: user.email,

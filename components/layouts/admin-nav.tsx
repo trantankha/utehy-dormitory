@@ -54,7 +54,7 @@ export function AdminNav({ user }: AdminNavProps) {
           {/* User Info & Logout */}
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-700 hidden sm:inline">
-              <span className="font-medium">Admin:</span> {user.email}
+              <span className="font-medium">Quản trị:</span> {user.email}
             </span>
             <form action={logoutAction}>
               <Button type="submit" variant="outline" size="sm" className="cursor-pointer">

@@ -17,7 +17,7 @@ export const createPaymentSchema = z.object({
     orderInfo: z.string().min(1, 'Thông tin đơn hàng là bắt buộc').max(255, 'Thông tin đơn hàng không được vượt quá 255 ký tự'),
     notes: z.string().max(1000, 'Ghi chú không được vượt quá 1000 ký tự').optional(),
 }).refine((data) => data.registrationId || data.utilityBillId, {
-    message: 'Phải có ít nhất một trong hai: registrationId hoặc utilityBillId',
+    message: 'Phải có ít nhất một trong hai: Mã chuyển phòng hoặc Mã hóa đơn điện nước',
     path: ['registrationId'], // This will show the error on registrationId field
 })
 
