@@ -79,7 +79,7 @@ export default function TransferRoomPage() {
                     <p className="text-gray-600 mt-2">Quản lý yêu cầu chuyển phòng của bạn</p>
                 </div>
                 <Button onClick={() => setIsDialogOpen(true)} className="cursor-pointer">
-                    Gửi yêu cầu chuyển phòng
+                    Gửi yêu cầu
                 </Button>
                 <RoomTransferDialog
                     isOpen={isDialogOpen}

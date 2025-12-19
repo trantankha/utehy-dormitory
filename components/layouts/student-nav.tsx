@@ -20,6 +20,7 @@ export function StudentNav({ user }: StudentNavProps) {
     { href: "/student/my-registrations", label: "Phiếu đăng ký" },
     { href: "/student/transfer-room", label: "Chuyển phòng" },
     { href: "/student/utility-bills", label: "Hóa đơn điện nước" },
+    { href: "/student/profile", label: "Hồ sơ cá nhân" },
   ]
 
   return (
