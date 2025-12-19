@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
 import { updateRegistrationStatusSchema, type UpdateRegistrationStatusInput } from "@/lib/validations/registration"
+import { createRoomSchema, updateRoomSchema, type CreateRoomInput, type UpdateRoomInput } from "@/lib/validations/room"
 import { revalidatePath } from "next/cache"
 import type { RegistrationStatus } from "@prisma/client"
 
@@ -329,11 +330,27 @@ export async function deleteStudentAction(studentId: string) {
 // GET ALL ROOMS (Admin only)
 // ============================================
 
-export async function getAllRoomsAction() {
+export async function getAllRoomsAction(filters?: {
+  search?: string
+  dormitoryId?: string
+  roomType?: string
+  isActive?: boolean
+}) {
   try {
     await requireAuth(["ADMIN"])
 
     const rooms = await prisma.room.findMany({
+      where: {
+        ...(filters?.search && {
+          OR: [
+            { roomNumber: { contains: filters.search, mode: "insensitive" } },
+            { dormitory: { name: { contains: filters.search, mode: "insensitive" } } },
+          ],
+        }),
+        ...(filters?.dormitoryId && { dormitoryId: filters.dormitoryId }),
+        ...(filters?.roomType && { roomType: filters.roomType as any }),
+        ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
+      },
       include: {
         dormitory: true,
         beds: true,
@@ -357,6 +374,298 @@ export async function getAllRoomsAction() {
       success: false,
       error: "Đã xảy ra lỗi khi lấy danh sách phòng",
       data: [],
+    }
+  }
+}
+
+// ============================================
+// CREATE ROOM (Admin only)
+// ============================================
+
+export async function createRoomAction(data: CreateRoomInput) {
+  try {
+    await requireAuth(["ADMIN"])
+
+    // Validate input
+    const validatedData = createRoomSchema.parse(data)
+
+    // Check if room number already exists in the dormitory
+    const existingRoom = await prisma.room.findUnique({
+      where: {
+        dormitoryId_roomNumber: {
+          dormitoryId: data.dormitoryId,
+          roomNumber: data.roomNumber,
+        },
+      },
+    })
+
+    if (existingRoom) {
+      return {
+        success: false,
+        error: "Số phòng đã tồn tại trong ký túc xá này",
+      }
+    }
+
+    // Create room
+    const room = await prisma.room.create({
+      data: {
+        dormitoryId: data.dormitoryId,
+        roomNumber: data.roomNumber,
+        floor: data.floor,
+        roomType: data.roomType,
+        capacity: data.capacity,
+        pricePerSemester: data.pricePerSemester,
+        description: data.description,
+        isActive: data.isActive ?? true,
+      },
+      include: {
+        dormitory: true,
+        beds: true,
+      },
+    })
+
+    // Create beds for the room
+    const beds = []
+    for (let i = 1; i <= data.capacity; i++) {
+      const bed = await prisma.bed.create({
+        data: {
+          roomId: room.id,
+          bedNumber: i.toString(),
+          status: "AVAILABLE",
+        },
+      })
+      beds.push(bed)
+    }
+
+    // Update dormitory totalRooms
+    await prisma.dormitory.update({
+      where: { id: data.dormitoryId },
+      data: {
+        totalRooms: {
+          increment: 1,
+        },
+      },
+    })
+
+    revalidatePath("/admin/rooms")
+
+    return {
+      success: true,
+      data: {
+        ...room,
+        pricePerSemester: Number(room.pricePerSemester),
+        beds,
+      },
+    }
+  } catch (error) {
+    console.error("Create room error:", error)
+    return {
+      success: false,
+      error: "Đã xảy ra lỗi khi tạo phòng",
+    }
+  }
+}
+
+// ============================================
+// UPDATE ROOM (Admin only)
+// ============================================
+
+export async function updateRoomAction(roomId: string, data: {
+  roomNumber: string
+  floor: number
+  roomType: "PHONG_4" | "PHONG_6" | "PHONG_8"
+  capacity: number
+  pricePerSemester: number
+  description?: string
+  isActive?: boolean
+}) {
+  try {
+    await requireAuth(["ADMIN"])
+
+    // Get current room
+    const currentRoom = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        beds: true,
+      },
+    })
+
+    if (!currentRoom) {
+      return {
+        success: false,
+        error: "Không tìm thấy phòng",
+      }
+    }
+
+    // Check if room number already exists in the dormitory (excluding current room)
+    if (data.roomNumber !== currentRoom.roomNumber) {
+      const existingRoom = await prisma.room.findUnique({
+        where: {
+          dormitoryId_roomNumber: {
+            dormitoryId: currentRoom.dormitoryId,
+            roomNumber: data.roomNumber,
+          },
+        },
+      })
+
+      if (existingRoom) {
+        return {
+          success: false,
+          error: "Số phòng đã tồn tại trong ký túc xá này",
+        }
+      }
+    }
+
+    // If capacity changed, need to adjust beds
+    if (data.capacity !== currentRoom.capacity) {
+      if (data.capacity > currentRoom.capacity) {
+        // Add beds
+        for (let i = currentRoom.capacity + 1; i <= data.capacity; i++) {
+          await prisma.bed.create({
+            data: {
+              roomId: roomId,
+              bedNumber: i.toString(),
+            },
+          })
+        }
+      } else {
+        // Remove beds (only if they are available)
+        const bedsToRemove = currentRoom.beds
+          .filter(bed => parseInt(bed.bedNumber) > data.capacity)
+          .filter(bed => bed.status === "AVAILABLE")
+
+        if (bedsToRemove.length !== (currentRoom.capacity - data.capacity)) {
+          return {
+            success: false,
+            error: "Không thể giảm sức chứa vì có giường đang được sử dụng",
+          }
+        }
+
+        await prisma.bed.deleteMany({
+          where: {
+            id: {
+              in: bedsToRemove.map(bed => bed.id),
+            },
+          },
+        })
+      }
+    }
+
+    // Update room
+    const room = await prisma.room.update({
+      where: { id: roomId },
+      data: {
+        roomNumber: data.roomNumber,
+        floor: data.floor,
+        roomType: data.roomType,
+        capacity: data.capacity,
+        pricePerSemester: data.pricePerSemester,
+        description: data.description,
+        isActive: data.isActive ?? true,
+      },
+      include: {
+        dormitory: true,
+        beds: true,
+      },
+    })
+
+    revalidatePath("/admin/rooms")
+
+    return {
+      success: true,
+      data: {
+        ...room,
+        pricePerSemester: Number(room.pricePerSemester),
+      },
+    }
+  } catch (error) {
+    console.error("Update room error:", error)
+    return {
+      success: false,
+      error: "Đã xảy ra lỗi khi cập nhật phòng",
+    }
+  }
+}
+
+// ============================================
+// DELETE ROOM (Admin only)
+// ============================================
+
+export async function deleteRoomAction(roomId: string) {
+  try {
+    await requireAuth(["ADMIN"])
+
+    // Get room with relations
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        registrations: {
+          where: {
+            status: {
+              in: ["CHO_XAC_NHAN", "DA_XAC_NHAN", "DA_THANH_TOAN"],
+            },
+          },
+        },
+        beds: true,
+      },
+    })
+
+    if (!room) {
+      return {
+        success: false,
+        error: "Không tìm thấy phòng",
+      }
+    }
+
+    // Check if room has active registrations
+    if (room.registrations.length > 0) {
+      return {
+        success: false,
+        error: "Không thể xóa phòng có phiếu đăng ký đang hoạt động",
+      }
+    }
+
+    // Check if any beds are occupied
+    const occupiedBeds = room.beds.filter(bed => bed.status !== "AVAILABLE")
+    if (occupiedBeds.length > 0) {
+      return {
+        success: false,
+        error: "Không thể xóa phòng có giường đang được sử dụng",
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Delete beds first
+      await tx.bed.deleteMany({
+        where: { roomId: roomId },
+      })
+
+      // Delete room
+      await tx.room.delete({
+        where: { id: roomId },
+      })
+
+      // Update dormitory totalRooms
+      await tx.dormitory.update({
+        where: { id: room.dormitoryId },
+        data: {
+          totalRooms: {
+            decrement: 1,
+          },
+        },
+      })
+    })
+
+    revalidatePath("/admin/rooms")
+
+    return {
+      success: true,
+    }
+  } catch (error) {
+    console.error("Delete room error:", error)
+    return {
+      success: false,
+      error: "Đã xảy ra lỗi khi xóa phòng",
     }
   }
 }
